@@ -35,9 +35,9 @@ _UI_: Biblioteca
 _Avoid_: catalog, repertoire, database; splitting public Catálogo from editor Biblioteca
 
 **Program**:
-A named, ordered sequence of sections prepared for one gathering, which can be saved, reused, and exported.
+A named, ordered sequence of sections prepared for one gathering, which can be saved, reused, shared by link, and exported. Not listed in a public gallery; only the creating client may change or delete it; anyone with the link may view and Export.
 _UI_: Programa
-_Avoid_: presentation, slideshow, deck, PDF (as the name of this concept)
+_Avoid_: presentation, slideshow, deck, PDF (as the name of this concept); a site-wide Program gallery; treating Program edit rights as an Editor privilege
 
 **Section**:
 One typed unit in a Program’s order; it expands into one or more slides when exported.
@@ -90,6 +90,6 @@ _UI_: Exportar
 _Avoid_: generate, render, publish (unless a later meaning is introduced)
 
 **Editor**:
-A signed-in Google user whose email is on the allowlist; the only person who may create or edit Songs and Artists.
+A signed-in Google user whose email is on the allowlist; the only person who may create or edit Songs and Artists. Not the owner of Programs.
 _UI_: editor / editores (copy, not a nav item)
-_Avoid_: Role, admin, operator, User (as the name of this concept); storing Editor as an RBAC role
+_Avoid_: Role, admin, operator, User (as the name of this concept); storing Editor as an RBAC role; using Editor for who may edit a Program

@@ -1,0 +1,3 @@
+# Programs are link-only with cookie ownership
+
+Alvo Cifras is a public Song library; a site-wide gallery of every gathering’s Program would be noise and abuse surface, so Programs are **unlisted** (shared by view URL only). Assemble/export stay login-free, so edit/delete is not Google/Editor-gated: the creating browser receives a **long-lived ownership cookie** on explicit create, with a device-local “Meus programas” list. The shareable URL is read-only Program UI plus Export. No portable edit link and no recovery if the cookie is lost — that Program stays view/export-only. Editors (Song/Artist allowlist) get no special Program powers.
