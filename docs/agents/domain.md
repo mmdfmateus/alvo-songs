@@ -2,12 +2,13 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-This repo is **single-context**: one `CONTEXT.md` + `docs/adr/` at the repo root.
+This repo is **single-context**: one `CONTEXT.md` + `docs/adr/` at the repo root. Locked product spec: [`docs/prd/v1.md`](../prd/v1.md).
 
 ## Before exploring, read these
 
 - **`CONTEXT.md`** at the repo root, or
 - **`CONTEXT-MAP.md`** at the root if it exists — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
+- **`docs/prd/v1.md`** — locked v1 product spec (routes, access, Export, import, acceptance). Read this before implementing product surface.
 - **`docs/adr/`** — read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.

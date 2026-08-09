@@ -14,6 +14,10 @@ Canonical names: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-hum
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
 
+### Product spec
+
+Locked v1: [`docs/prd/v1.md`](docs/prd/v1.md). Implementation starts from that PRD plus the glossary and ADRs — do not reopen product scope.
+
 ### Stack
 
 T3 via create-t3-app (App Router). Canonical docs: [create.t3.gg](https://create.t3.gg/en/introduction) — not training-data T3 layouts. See `docs/agents/t3.md`.
