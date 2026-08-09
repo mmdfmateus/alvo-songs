@@ -1,0 +1,115 @@
+// Alvo Cifras data model — ADR 0007. Do not invent columns.
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+    user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    isEditor      Boolean   @default(false)
+    accounts      Account[]
+    sessions      Session[]
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+model Artist {
+    id        String   @id @default(uuid())
+    name      String   @unique @db.Citext
+    imageUrl  String?
+    songs     Song[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Song {
+    id        String       @id @default(uuid())
+    title     String
+    cifra     Json
+    artistId  String?
+    artist    Artist?      @relation(fields: [artistId], references: [id], onDelete: SetNull)
+    videoId   String?
+    chunks    LyricChunk[]
+    createdAt DateTime     @default(now())
+    updatedAt DateTime     @updatedAt
+
+    @@index([artistId])
+}
+
+model LyricChunk {
+    id       String @id @default(uuid())
+    songId   String
+    song     Song   @relation(fields: [songId], references: [id], onDelete: Cascade)
+    position Int
+    text     String
+
+    @@unique([songId, position])
+    @@index([songId])
+}
+
+model Program {
+    id             String    @id @default(uuid())
+    name           String
+    ownerTokenHash String    @unique
+    sections       Section[]
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @updatedAt
+}
+
+model Section {
+    id        String   @id @default(uuid())
+    programId String
+    program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+    position  Int
+    /// opening | song | announcements | game | moment
+    type      String
+    /// Live Song ref; no FK — dangling id is the ADR 0004 broken-ref state. Null ok even when type is song.
+    songId    String?
+    payload   Json     @default("{}")
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([programId, position])
+    @@index([programId])
+}
