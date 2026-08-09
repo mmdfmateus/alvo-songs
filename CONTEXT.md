@@ -20,14 +20,14 @@ _UI_: Trecho
 _Avoid_: verse, estrofe (as the model name); slide (as the name of this concept); treating Lyric chunk as Letra or as Cifra; treating Trechos as a live view of Letra; regenerating Trechos when the Cifra is saved; writing Trecho edits back into the Cifra
 
 **Artist**:
-A named performer or group a Song may optionally credit.
+A named performer or group a Song may optionally credit; may carry an optional image URL for display.
 _UI_: Artista
 _Avoid_: band, author, compositor (unless a later subtype is needed); a free-text label on Song instead of its own entity
 
 **Song**:
-A reusable library entry with a title, a Cifra, an ordered list of lyric chunks, and an optional Artist.
+A reusable library entry with a title, a Cifra, an ordered list of lyric chunks, an optional Artist, and an optional YouTube video id.
 _UI_: Música
-_Avoid_: track, hymn (unless a later subtype is needed); using Cifra or Letra as the name of the library entry
+_Avoid_: track, hymn (unless a later subtype is needed); using Cifra or Letra as the name of the library entry; persisting Letra as a second original beside Cifra
 
 **Song library**:
 The curated collection of reusable Songs. Anyone can browse; only editors add or edit.
