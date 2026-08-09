@@ -6,9 +6,10 @@
   <title>PROTOTYPE — Alvo Cifras public IA (v2)</title>
   <!--
     Question: Public (and editor) route/nav outline for Alvo Cifras?
-    Baseline: previous Variant C (Biblioteca ↔ Programas mode shell).
+    Baseline: Variant C (Biblioteca ↔ Slides mode) — preferred starting point.
     References: cifras.alvodamocidade.com.br + cifraclub.com.br song page.
-    Three variants via ?variant=A|B|C — throwaway.
+    Builder product area UI label: Slides (not Programas). Domain entity remains Program.
+    Three variants via ?variant=A|B|C — throwaway. Default C.
   -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -266,7 +267,7 @@
     .cc-cifra .chords { color: var(--chord); font-weight: 500; min-height: 1.2em; white-space: pre; }
     .cc-cifra .lyrics { white-space: pre; }
 
-    /* Programas mode */
+    /* Slides mode (Program builder) */
     .prog-card {
       background: var(--paper); border: 1px solid var(--ink);
       border-radius: 8px; padding: 1rem 1.1rem; margin-bottom: 0.75rem;
@@ -342,7 +343,7 @@
     const VARIANTS = {
       A: { key: "A", name: "Alvo browse + mode rail" },
       B: { key: "B", name: "CifraClub reading focus" },
-      C: { key: "C", name: "Hybrid header + mode pills" },
+      C: { key: "C", name: "Hybrid header + mode pills ★" },
     };
     const ORDER = ["A", "B", "C"];
 
@@ -370,7 +371,7 @@
 
     const state = {
       variant: "A",
-      mode: "biblioteca", // biblioteca | programas
+      mode: "biblioteca", // biblioteca | slides
       screen: "home", // home | musicas | artistas | song | artist | editor | program-view
       songId: "1",
       artistId: null,
@@ -381,8 +382,8 @@
 
     function qs() { return new URLSearchParams(location.search); }
     function readVariant() {
-      const v = (qs().get("variant") || "A").toUpperCase();
-      return VARIANTS[v] ? v : "A";
+      const v = (qs().get("variant") || "C").toUpperCase();
+      return VARIANTS[v] ? v : "C";
     }
     function setVariant(v) {
       const p = qs(); p.set("variant", v);
@@ -398,7 +399,7 @@
       if (["home", "musicas", "artistas", "song", "artist", "editor"].includes(screen)) {
         state.mode = "biblioteca";
       }
-      if (["meus", "program-view"].includes(screen)) state.mode = "programas";
+      if (["meus", "program-view"].includes(screen)) state.mode = "slides";
       render();
     }
     function song() { return SONGS.find((s) => s.id === state.songId) || SONGS[0]; }
@@ -414,22 +415,22 @@
         ["/musicas/[id]", "Song: avatar + Cifra|Letra + Escutar"],
         ["/artistas", "A–Z artists"],
         ["/artistas/[id]", "Artist + songs"],
-        ["/programas", "Meus programas (device)"],
-        ["/programas/[id]", "view + Exportar"],
-        ["/programas/[id]/editar", "cookie owner"],
+        ["/slides", "Meus slides (device)"],
+        ["/slides/[id]", "view + Exportar"],
+        ["/slides/[id]/editar", "cookie owner"],
         ["/editor/*", "allowlist CRUD in rail"],
       ];
       if (v === "B") return [
         ["/", "Biblioteca — artist-forward index"],
         ["/artista/[slug]/[song]", "CC-style reading URL"],
         ["/musicas", "flat A–Z fallback"],
-        ["/programas…", "same link-only Program model"],
+        ["/slides…", "same link-only Program model; UI: Slides"],
         ["(song view)", "rail hides — reading chrome only"],
       ];
       return [
-        ["/", "Alvo header + mode pills (Bib | Prog)"],
+        ["/", "Alvo header + mode pills (Biblioteca | Slides)"],
         ["/musicas", "/artistas", "/musicas/[id]"],
-        ["/programas…", "pill switches mode; no left rail"],
+        ["/slides…", "pill switches mode; no left rail"],
         ["/editor/*", "under Entrar menu when Editor"],
       ];
     }
@@ -450,7 +451,7 @@
           <div>
             <div class="group-label">Modo</div>
             <button type="button" class="rail-btn ${activeMode === "biblioteca" ? "on" : ""}" data-go="home">Biblioteca</button>
-            <button type="button" class="rail-btn ${activeMode === "programas" ? "on" : ""}" data-go="meus">Programas</button>
+            <button type="button" class="rail-btn ${activeMode === "slides" ? "on" : ""}" data-go="meus">Slides</button>
             ${ed ? `
               <div class="group-label">Editor</div>
               <button type="button" class="rail-btn ${state.screen === "editor" ? "on" : ""}" data-go="editor">Editar acervo</button>
@@ -488,8 +489,8 @@ Vê se entende!</div>`;
     /* ——— A: Alvo browse + mode rail ——— */
     function renderA() {
       let body = "";
-      if (state.mode === "programas") {
-        body = programasBody();
+      if (state.mode === "slides") {
+        body = slidesBody();
       } else if (state.screen === "home") {
         body = `
           <div class="alvo-top">
@@ -521,7 +522,7 @@ Vê se entende!</div>`;
             </div>
             <div class="chip-row">
               <span class="chip ref">Ref: Alvo home cards + search</span>
-              <span class="chip note">Mode rail keeps Programas one click away</span>
+              <span class="chip note">Mode rail keeps Slides one click away</span>
             </div>
           </div>`;
       } else if (state.screen === "musicas") {
@@ -627,12 +628,12 @@ Vê se entende!</div>`;
       </div>`;
     }
 
-    function programasBody() {
+    function slidesBody() {
       return `<div class="main-pad">
-        <h1 style="margin:0 0 0.35rem">Meus programas</h1>
+        <h1 style="margin:0 0 0.35rem">Meus slides</h1>
         <p class="muted" style="margin:0 0 1rem">Neste dispositivo · link-only (sem galeria pública)</p>
         <button type="button" class="prog-card" data-go="program-view">
-          <h3>Criar programa</h3>
+          <h3>Criar slides</h3>
           <p>Define cookie de ownership e abre o editor</p>
         </button>
         <button type="button" class="prog-card" data-go="program-view">
@@ -647,8 +648,8 @@ Vê se entende!</div>`;
       const reading = state.screen === "song" && state.mode === "biblioteca";
       let body = "";
 
-      if (state.mode === "programas") {
-        body = programasBody();
+      if (state.mode === "slides") {
+        body = slidesBody();
       } else if (reading) {
         const s = song();
         body = `
@@ -736,7 +737,7 @@ Vê se entende!</div>`;
             <input class="search" placeholder="Procure por uma música ou artista" readonly />
             <div class="mode-pills">
               <button type="button" class="${state.mode === "biblioteca" ? "on" : ""}" data-go="home">Biblioteca</button>
-              <button type="button" class="${state.mode === "programas" ? "on" : ""}" data-go="meus">Programas</button>
+              <button type="button" class="${state.mode === "slides" ? "on" : ""}" data-go="meus">Slides</button>
             </div>
             <button type="button" class="top-link" id="toggle-editor">${ed ? "Sair" : "Entrar"}</button>
           </div>
@@ -749,7 +750,7 @@ Vê se entende!</div>`;
         </div>`;
 
       let body = "";
-      if (state.mode === "programas") body = programasBody();
+      if (state.mode === "slides") body = slidesBody();
       else if (state.screen === "home") {
         body = `
           <div class="main-pad">
@@ -776,7 +777,7 @@ Vê se entende!</div>`;
             </div>
             <div class="chip-row">
               <span class="chip ref">Ref: Alvo header + home</span>
-              <span class="chip note">Mode as pills — C baseline without consuming horizontal space on song pages</span>
+              <span class="chip note">Modes: Biblioteca | Slides — preferred starting IA</span>
             </div>
           </div>`;
       } else if (state.screen === "musicas") body = `<div class="main-pad"><h1 style="margin:0 0 0.75rem">Músicas</h1>${SONGS.map((s) => `

@@ -2,25 +2,23 @@
 
 Throwaway UI for [Public information architecture](https://github.com/mmdfmateus/alvo-songs/issues/10).
 
-**Question:** What is the public (and editor) route/nav outline for Alvo Cifras?
-
-**Baseline:** previous Variant C (Biblioteca ↔ Programas mode shell).
+**Preferred starting point:** Variant **C** — Alvo sticky header + mode pills **Biblioteca | Slides**.
 
 **References:**
-- [Alvo Cifras](https://cifras.alvodamocidade.com.br/) — search, Músicas/Artistas cards, song tabs + Escutar
-- [CifraClub song page](https://www.cifraclub.com.br/marcos-almeida/rio-torto/) — artist/song hierarchy, dense cifra reading
+- [Alvo Cifras](https://cifras.alvodamocidade.com.br/)
+- [CifraClub song page](https://www.cifraclub.com.br/marcos-almeida/rio-torto/)
 
 ## Run
 
 ```bash
 cd prototypes/public-ia && python3 -m http.server 4173
-# http://localhost:4173/?variant=A
+# http://localhost:4173/?variant=C
 ```
 
 | Variant | Idea |
 | --- | --- |
-| A | Alvo browse home + mode rail |
-| B | CifraClub reading focus (rail hides on song) |
-| C | Hybrid: Alvo sticky header + mode pills (no rail) |
+| A | Alvo browse + mode rail |
+| B | CifraClub reading focus |
+| C ★ | Hybrid header + **Biblioteca \| Slides** pills |
 
-Not for `master` until a verdict is captured on the issue.
+Domain entity remains **Program**; product/nav label for the builder is **Slides**.
