@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PROTOTYPE — Alvo Cifras public IA</title>
+  <!--
+    Question: What is the public (and editor) route/nav outline for Alvo Cifras?
+    Three IA variants via ?variant=A|B|C — throwaway; not production.
+    Open this file in a browser, or: python3 -m http.server 4173 (from this folder).
+  -->
+  <style>
+    :root {
+      --ink: #1c1917;
+      --muted: #78716c;
+      --line: #e7e5e4;
+      --paper: #fafaf9;
+      --accent: #0f766e;
+      --accent-ink: #134e4a;
+      --warn: #9a3412;
+      --bar: #0c0a09;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      color: var(--ink);
+      background: var(--paper);
+      min-height: 100vh;
+      padding-bottom: 5.5rem;
+    }
+    button, input, a { font: inherit; }
+    .proto-banner {
+      background: #44403c;
+      color: #fafaf9;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.45rem 1rem;
+      text-align: center;
+    }
+    .routes {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .routes strong { color: var(--ink); }
+    .routes code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem;
+      background: #f5f5f4;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+    }
+    .screen-label {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    .stub {
+      border: 1px dashed #a8a29e;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      background: #fff;
+      min-height: 3.5rem;
+    }
+    .stub h2, .stub h3 { margin: 0 0 0.35rem; font-weight: 600; }
+    .stub p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.65rem; }
+    .chip {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.72rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      background: #f5f5f4;
+      color: var(--ink);
+    }
+    .chip.accent { background: #ccfbf1; border-color: #99f6e4; color: var(--accent-ink); }
+    .chip.editor { background: #ffedd5; border-color: #fed7aa; color: var(--warn); }
+    .nav-link {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .nav-link.active { font-weight: 700; text-decoration: none; color: var(--accent-ink); }
+    .muted { color: var(--muted); }
+    .grid-2 { display: grid; gap: 1rem; }
+    @media (min-width: 720px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+
+    /* —— Variant A: Biblioteca-first top nav —— */
+    .a-shell header {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--ink);
+      background: #fff;
+    }
+    .a-brand {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    .a-nav { display: flex; gap: 1rem; flex: 1; font-size: 0.95rem; }
+    .a-nav .nav-link { text-decoration: none; }
+    .a-nav .nav-link:hover { color: var(--accent); }
+    .a-actions { margin-left: auto; display: flex; gap: 0.75rem; align-items: center; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.85rem; }
+    .a-main { padding: 1.25rem; max-width: 960px; margin: 0 auto; display: grid; gap: 1rem; }
+    .a-search {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--ink);
+      border-radius: 2px;
+      background: #fff;
+      font-size: 1rem;
+    }
+    .a-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--line); }
+    .a-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+    }
+    .a-list li:hover { color: var(--accent-ink); }
+    .a-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--ink); margin: 0.75rem 0; }
+    .a-tabs button {
+      border: none;
+      background: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .a-tabs button.on { border-bottom-color: var(--ink); font-weight: 700; }
+
+    /* —— Variant B: Two doors —— */
+    .b-shell { min-height: 70vh; }
+    .b-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1.5rem 1.5rem 0.5rem;
+    }
+    .b-brand {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    .b-doors {
+      display: grid;
+      gap: 1px;
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      margin: 1.5rem;
+      min-height: 55vh;
+    }
+    @media (min-width: 720px) { .b-doors { grid-template-columns: 1fr 1fr; } }
+    .b-door {
+      background: var(--paper);
+      padding: 2.5rem 1.75rem;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      min-height: 280px;
+    }
+    .b-door:hover { background: #fff; }
+    .b-door h2 { margin: 0; font-size: 2rem; letter-spacing: -0.03em; }
+    .b-door p { margin: 0; color: var(--muted); max-width: 22ch; }
+    .b-subnav {
+      display: flex;
+      gap: 1rem;
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--line);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.85rem;
+      background: #fff;
+    }
+    .b-main { padding: 1.25rem 1.5rem; max-width: 900px; }
+    .b-cta {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.65rem 1.1rem;
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.9rem;
+    }
+
+    /* —— Variant C: Mode shell —— */
+    .c-shell { display: grid; min-height: 70vh; }
+    @media (min-width: 800px) { .c-shell { grid-template-columns: 220px 1fr; } }
+    .c-rail {
+      background: var(--ink);
+      color: #fafaf9;
+      padding: 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .c-brand {
+      font-size: 1.15rem;
+      font-weight: 700;
+      border: none;
+      background: none;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      padding: 0;
+    }
+    .c-mode {
+      display: grid;
+      gap: 0.35rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.8rem;
+    }
+    .c-mode button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: #d6d3d1;
+      text-align: left;
+      padding: 0.55rem 0.65rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .c-mode button.on { background: #292524; color: #fff; border-color: #57534e; }
+    .c-mode .group-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #a8a29e;
+      margin: 0.75rem 0 0.25rem;
+      padding-left: 0.65rem;
+    }
+    .c-main { padding: 1.25rem; }
+    .c-artist-strip {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .c-artist {
+      flex: 0 0 auto;
+      width: 88px;
+      text-align: center;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.7rem;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+    .c-artist .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #d6d3d1;
+      margin: 0 auto 0.35rem;
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+      color: var(--ink);
+    }
+    .c-program-card {
+      border: 1px solid var(--ink);
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    /* Switcher bar */
+    .switcher {
+      position: fixed;
+      left: 50%;
+      bottom: 1rem;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bar);
+      color: #fafaf9;
+      padding: 0.45rem 0.55rem;
+      border-radius: 999px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.85rem;
+      user-select: none;
+    }
+    .switcher button {
+      border: none;
+      background: #292524;
+      color: #fff;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .switcher .label { min-width: 14rem; text-align: center; padding: 0 0.5rem; }
+    .state-dump {
+      margin: 1.25rem;
+      padding: 0.85rem 1rem;
+      background: #1c1917;
+      color: #e7e5e4;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem;
+      border-radius: 6px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="proto-banner">PROTOTYPE · Public information architecture · not the real app</div>
+  <div id="app"></div>
+  <pre class="state-dump" id="state"></pre>
+  <div class="switcher" id="switcher" aria-label="Prototype variant switcher">
+    <button type="button" id="prev" aria-label="Previous variant">←</button>
+    <div class="label" id="switcher-label"></div>
+    <button type="button" id="next" aria-label="Next variant">→</button>
+  </div>
+
+  <script>
+    /**
+     * Three variants of Alvo Cifras public/editor IA, switchable via ?variant=
+     * Locked constraints: link-only Programs (ADR 0001); Biblioteca curated;
+     * Editors mutate Songs/Artists only; Song page = Cifra/Letra (+ YT/image later).
+     */
+    const VARIANTS = {
+      A: { key: "A", name: "Biblioteca-first top nav" },
+      B: { key: "B", name: "Two-door home" },
+      C: { key: "C", name: "Mode rail (Bib ↔ Prog)" },
+    };
+    const ORDER = ["A", "B", "C"];
+
+    const SONGS = [
+      { id: "1", title: "Ao Único", artist: "Adoração & Adoradores" },
+      { id: "2", title: "Agnus Dei", artist: null },
+      { id: "3", title: "Quão Grande É o Meu Deus", artist: "Soraya Moraes" },
+    ];
+
+    const state = {
+      variant: "A",
+      screen: "home",
+      songId: null,
+      tab: "cifra",
+      editorSignedIn: true,
+      programMode: "meus",
+    };
+
+    function qs() {
+      return new URLSearchParams(location.search);
+    }
+    function readVariant() {
+      const v = (qs().get("variant") || "A").toUpperCase();
+      return VARIANTS[v] ? v : "A";
+    }
+    function setVariant(v) {
+      const params = qs();
+      params.set("variant", v);
+      history.replaceState(null, "", `?${params.toString()}`);
+      state.variant = v;
+      state.screen = "home";
+      state.songId = null;
+      render();
+    }
+    function go(screen, extra = {}) {
+      Object.assign(state, extra, { screen });
+      render();
+    }
+    function dumpState() {
+      document.getElementById("state").textContent =
+        "STATE\n" + JSON.stringify({ ...state, variantMeta: VARIANTS[state.variant] }, null, 2);
+    }
+
+    function routeMap(v) {
+      if (v === "A") {
+        return [
+          ["/", "Home = Biblioteca search/list"],
+          ["/biblioteca", "same as home (or redirect)"],
+          ["/musicas/[id]", "Song: Cifra | Letra"],
+          ["/artistas/[id]", "Artist (optional)"],
+          ["/meus-programas", "device-local list + criar"],
+          ["/programas/[id]", "view + Exportar (public link)"],
+          ["/programas/[id]/editar", "cookie-owner editor"],
+          ["/editor/musicas", "Editor-only Song CRUD"],
+          ["/editor/artistas", "Editor-only Artist CRUD"],
+        ];
+      }
+      if (v === "B") {
+        return [
+          ["/", "Two doors: Biblioteca | Programa"],
+          ["/biblioteca", "Song library"],
+          ["/biblioteca/[id]", "Song page"],
+          ["/artistas/[id]", "Artist"],
+          ["/programa", "create + Meus programas"],
+          ["/programa/[id]", "view + Exportar"],
+          ["/programa/[id]/editar", "owner editor"],
+          ["/biblioteca/nova", "Editor create Song (gated)"],
+        ];
+      }
+      return [
+        ["/", "redirect to last mode or /biblioteca"],
+        ["/biblioteca", "mode: Biblioteca"],
+        ["/biblioteca/musicas/[id]", "Song"],
+        ["/biblioteca/artistas", "Artist directory"],
+        ["/biblioteca/artistas/[id]", "Artist"],
+        ["/programas", "mode: Meus programas + criar"],
+        ["/programas/[id]", "view + Exportar"],
+        ["/programas/[id]/editar", "owner editor"],
+        ["/biblioteca/editar/*", "Editor tools inside Bib mode"],
+      ];
+    }
+
+    function routesBar(v) {
+      const rows = routeMap(v)
+        .map(([path, note]) => `<div><code>${path}</code> — ${note}</div>`)
+        .join("");
+      return `<div class="routes"><strong>Proposed routes (${v})</strong>${rows}</div>`;
+    }
+
+    function songById(id) {
+      return SONGS.find((s) => s.id === id) || SONGS[0];
+    }
+
+    /* ——— Variant A ——— */
+    function renderA() {
+      const editor = state.editorSignedIn;
+      const nav = (id, label) =>
+        `<button type="button" class="nav-link ${state.screen === id ? "active" : ""}" data-go="${id}">${label}</button>`;
+
+      let main = "";
+      if (state.screen === "home" || state.screen === "biblioteca") {
+        main = `
+          <div class="screen-label">Screen · Biblioteca (home)</div>
+          <input class="a-search" placeholder="Buscar músicas…" readonly />
+          <ul class="a-list">
+            ${SONGS.map(
+              (s) => `<li data-song="${s.id}"><span>${s.title}</span><span class="muted">${s.artist || "—"}</span></li>`
+            ).join("")}
+          </ul>
+          <div class="chip-row">
+            <span class="chip">Primary affordance: find a Música</span>
+            ${editor ? `<span class="chip editor">Editor: Nova música → /editor/musicas</span>` : ""}
+          </div>`;
+      } else if (state.screen === "song") {
+        const s = songById(state.songId);
+        main = `
+          <div class="screen-label">Screen · Música</div>
+          <div class="stub">
+            <h2>${s.title}</h2>
+            <p>${s.artist ? `<button type="button" class="nav-link" data-go="artist">${s.artist}</button>` : "Sem artista"}</p>
+            <div class="a-tabs">
+              <button type="button" class="${state.tab === "cifra" ? "on" : ""}" data-tab="cifra">Cifra</button>
+              <button type="button" class="${state.tab === "letra" ? "on" : ""}" data-tab="letra">Letra</button>
+            </div>
+            <p class="muted">${state.tab === "cifra" ? "Cifra (chords-over-words preview)…" : "Letra derivada da Cifra…"}</p>
+            <div class="chip-row">
+              <span class="chip">Optional YouTube</span>
+              <span class="chip">Optional artist image</span>
+              ${editor ? `<span class="chip editor">Editar música</span>` : ""}
+            </div>
+          </div>`;
+      } else if (state.screen === "meus") {
+        main = `
+          <div class="screen-label">Screen · Meus programas</div>
+          <div class="stub">
+            <h2>Meus programas</h2>
+            <p>Device-local list (cookie ownership). Not a public gallery.</p>
+            <div class="chip-row">
+              <span class="chip accent">Criar programa</span>
+              <span class="chip">Culto 09/08 → view link</span>
+            </div>
+          </div>`;
+      } else if (state.screen === "program-view") {
+        main = `
+          <div class="screen-label">Screen · Programa (public link)</div>
+          <div class="stub">
+            <h2>Culto Jovem — 09/08</h2>
+            <p>Read-only sections · Exportar PDF</p>
+            <div class="chip-row">
+              <span class="chip accent">Exportar</span>
+              <span class="chip">Owner sees Editar</span>
+            </div>
+          </div>`;
+      } else if (state.screen === "editor") {
+        main = `
+          <div class="screen-label">Screen · Editor tools</div>
+          <div class="stub">
+            <h2>Editor</h2>
+            <p>Allowlist only. No Program powers.</p>
+            <div class="chip-row">
+              <span class="chip editor">Músicas</span>
+              <span class="chip editor">Artistas</span>
+              <span class="chip editor">Trechos (per song)</span>
+            </div>
+          </div>`;
+      } else if (state.screen === "artist") {
+        main = `
+          <div class="screen-label">Screen · Artista</div>
+          <div class="stub">
+            <h2>Adoração & Adoradores</h2>
+            <p>Optional image · list of Músicas</p>
+          </div>`;
+      }
+
+      return `
+        ${routesBar("A")}
+        <div class="a-shell">
+          <header>
+            <button type="button" class="a-brand" data-go="home">Alvo Cifras</button>
+            <nav class="a-nav">
+              ${nav("biblioteca", "Biblioteca")}
+              ${nav("meus", "Meus programas")}
+              ${editor ? nav("editor", "Editor") : ""}
+            </nav>
+            <div class="a-actions">
+              <button type="button" class="nav-link" id="toggle-editor">${editor ? "Sair" : "Entrar"}</button>
+            </div>
+          </header>
+          <main class="a-main">${main}</main>
+        </div>`;
+    }
+
+    /* ——— Variant B ——— */
+    function renderB() {
+      const editor = state.editorSignedIn;
+      if (state.screen === "home") {
+        return `
+          ${routesBar("B")}
+          <div class="b-shell">
+            <div class="b-top">
+              <button type="button" class="b-brand" data-go="home">Alvo Cifras</button>
+              <button type="button" class="nav-link" id="toggle-editor" style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:0.85rem">${editor ? "Editor · Sair" : "Entrar"}</button>
+            </div>
+            <div class="b-doors">
+              <button type="button" class="b-door" data-go="biblioteca">
+                <h2>Biblioteca</h2>
+                <p>Cifras e letras da comunidade. Qualquer um pode ler.</p>
+              </button>
+              <button type="button" class="b-door" data-go="programa-hub">
+                <h2>Programa</h2>
+                <p>Monte o culto, compartilhe o link, exporte o PDF.</p>
+              </button>
+            </div>
+          </div>`;
+      }
+
+      const sub =
+        state.screen === "biblioteca" || state.screen === "song" || state.screen === "artist" || state.screen === "editor"
+          ? `<div class="b-subnav">
+              <button type="button" class="nav-link" data-go="home">← Portas</button>
+              <button type="button" class="nav-link ${state.screen === "biblioteca" ? "active" : ""}" data-go="biblioteca">Músicas</button>
+              ${editor ? `<button type="button" class="nav-link ${state.screen === "editor" ? "active" : ""}" data-go="editor">Nova música</button>` : ""}
+            </div>`
+          : `<div class="b-subnav">
+              <button type="button" class="nav-link" data-go="home">← Portas</button>
+              <button type="button" class="nav-link active" data-go="programa-hub">Meus programas</button>
+            </div>`;
+
+      let body = "";
+      if (state.screen === "biblioteca") {
+        body = `
+          <div class="screen-label">Door · Biblioteca</div>
+          <ul class="a-list">
+            ${SONGS.map(
+              (s) => `<li data-song="${s.id}"><span>${s.title}</span><span class="muted">${s.artist || "—"}</span></li>`
+            ).join("")}
+          </ul>`;
+      } else if (state.screen === "song") {
+        const s = songById(state.songId);
+        body = `
+          <div class="screen-label">Música</div>
+          <div class="stub"><h2>${s.title}</h2><p>Cifra | Letra tabs · same song page v1</p></div>`;
+      } else if (state.screen === "programa-hub") {
+        body = `
+          <div class="screen-label">Door · Programa</div>
+          <div class="stub">
+            <h2>Meus programas</h2>
+            <p>No site-wide gallery — only this device’s list.</p>
+            <button type="button" class="b-cta" data-go="program-view">Criar programa</button>
+          </div>`;
+      } else if (state.screen === "program-view") {
+        body = `
+          <div class="stub">
+            <h2>Novo programa</h2>
+            <p>Owner editor or public view + Exportar</p>
+            <div class="chip-row"><span class="chip accent">Exportar</span></div>
+          </div>`;
+      } else if (state.screen === "editor") {
+        body = `<div class="stub"><h2>Nova música</h2><p class="muted">Editor-gated create inside Biblioteca door</p></div>`;
+      }
+
+      return `${routesBar("B")}<div class="b-shell">${sub}<main class="b-main">${body}</main></div>`;
+    }
+
+    /* ——— Variant C ——— */
+    function renderC() {
+      const editor = state.editorSignedIn;
+      const bibMode = ["home", "biblioteca", "song", "artist", "editor", "artistas"].includes(state.screen);
+      const modeBib = bibMode || state.screen === "home";
+
+      const rail = `
+        <aside class="c-rail">
+          <button type="button" class="c-brand" data-go="home">Alvo Cifras</button>
+          <div class="c-mode">
+            <div class="group-label">Modo</div>
+            <button type="button" class="${modeBib ? "on" : ""}" data-go="biblioteca">Biblioteca</button>
+            <button type="button" class="${!modeBib ? "on" : ""}" data-go="meus">Programas</button>
+            ${
+              editor
+                ? `<div class="group-label">Editor</div>
+                   <button type="button" class="${state.screen === "editor" ? "on" : ""}" data-go="editor">Editar acervo</button>`
+                : ""
+            }
+            <div class="group-label">Conta</div>
+            <button type="button" id="toggle-editor">${editor ? "Sair" : "Entrar com Google"}</button>
+          </div>
+        </aside>`;
+
+      let main = "";
+      if (state.screen === "biblioteca" || state.screen === "home") {
+        main = `
+          <div class="screen-label">Mode · Biblioteca</div>
+          <div class="c-artist-strip">
+            <button type="button" class="c-artist" data-go="artistas"><div class="avatar">★</div>Artistas</button>
+            <button type="button" class="c-artist" data-go="artist"><div class="avatar">A</div>Adoração…</button>
+            <button type="button" class="c-artist" data-go="artist"><div class="avatar">S</div>Soraya</button>
+          </div>
+          <ul class="a-list">
+            ${SONGS.map(
+              (s) => `<li data-song="${s.id}"><span>${s.title}</span><span class="muted">${s.artist || "—"}</span></li>`
+            ).join("")}
+          </ul>
+          <div class="chip-row">
+            <span class="chip">Artistas are first-class in the rail/strip</span>
+            <span class="chip">Many livrinho songs have no artist — directory may feel sparse</span>
+          </div>`;
+      } else if (state.screen === "song") {
+        const s = songById(state.songId);
+        main = `<div class="stub"><h2>${s.title}</h2><p>Cifra | Letra · stays inside Biblioteca mode</p></div>`;
+      } else if (state.screen === "meus" || state.screen === "program-view") {
+        main = `
+          <div class="screen-label">Mode · Programas</div>
+          <div class="c-program-card" data-go="program-view">
+            <h3 style="margin:0 0 0.35rem">Criar programa</h3>
+            <p class="muted" style="margin:0">Opens owner editor · sets ownership cookie</p>
+          </div>
+          <div class="c-program-card" data-go="program-view">
+            <h3 style="margin:0 0 0.35rem">Culto 09/08</h3>
+            <p class="muted" style="margin:0">Neste dispositivo · abrir / exportar</p>
+          </div>
+          <div class="chip-row"><span class="chip">Entire chrome swaps to Programas — no Biblioteca links in this mode</span></div>`;
+      } else if (state.screen === "editor") {
+        main = `<div class="stub"><h2>Editar acervo</h2><p>Songs + Artists + Trechos · still under Biblioteca family of routes</p></div>`;
+      } else if (state.screen === "artistas" || state.screen === "artist") {
+        main = `<div class="stub"><h2>Artistas</h2><p>Directory — fog: most livrinho songs have no artist</p></div>`;
+      }
+
+      return `${routesBar("C")}<div class="c-shell">${rail}<main class="c-main">${main}</main></div>`;
+    }
+
+    function bind() {
+      document.querySelectorAll("[data-go]").forEach((el) => {
+        el.addEventListener("click", () => go(el.getAttribute("data-go")));
+      });
+      document.querySelectorAll("[data-song]").forEach((el) => {
+        el.addEventListener("click", () => go("song", { songId: el.getAttribute("data-song") }));
+      });
+      document.querySelectorAll("[data-tab]").forEach((el) => {
+        el.addEventListener("click", () => {
+          state.tab = el.getAttribute("data-tab");
+          render();
+        });
+      });
+      const toggle = document.getElementById("toggle-editor");
+      if (toggle) {
+        toggle.addEventListener("click", () => {
+          state.editorSignedIn = !state.editorSignedIn;
+          if (!state.editorSignedIn && state.screen === "editor") state.screen = "home";
+          render();
+        });
+      }
+    }
+
+    function render() {
+      state.variant = readVariant();
+      const root = document.getElementById("app");
+      if (state.variant === "A") root.innerHTML = renderA();
+      else if (state.variant === "B") root.innerHTML = renderB();
+      else root.innerHTML = renderC();
+      document.getElementById("switcher-label").textContent =
+        `${state.variant} — ${VARIANTS[state.variant].name}`;
+      dumpState();
+      bind();
+    }
+
+    function cycle(delta) {
+      const i = ORDER.indexOf(readVariant());
+      const next = ORDER[(i + delta + ORDER.length) % ORDER.length];
+      setVariant(next);
+    }
+
+    document.getElementById("prev").addEventListener("click", () => cycle(-1));
+    document.getElementById("next").addEventListener("click", () => cycle(1));
+    window.addEventListener("keydown", (e) => {
+      const t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key === "ArrowLeft") cycle(-1);
+      if (e.key === "ArrowRight") cycle(1);
+    });
+
+    state.variant = readVariant();
+    render();
+  </script>
+</body>
+</html>
