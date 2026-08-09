@@ -50,9 +50,9 @@ _UI_: Tipo de seção
 _Avoid_: block type, content type
 
 **Song section**:
-A Section of type song that references a Song and expands into a title slide followed by that Song’s lyric-chunk slides.
+A Section of type song that holds a live reference to a Song and, at Export, expands into a title slide followed by that Song’s current lyric-chunk slides.
 _UI_: Seção de música (still shown as Música in the Program)
-_Avoid_: using “Song” alone for a placement in a Program
+_Avoid_: using “Song” alone for a placement in a Program; storing frozen Trechos or title on the Program; treating the section as a snapshot of the Song
 
 **Slide**:
 One page in the exported slideshow (title, lyric, marker, or blank).
@@ -85,9 +85,9 @@ _UI_: Momento
 _Avoid_: treating Moment as a Song or as blank Slides by default
 
 **Export**:
-The action that expands a Program’s Sections into Slides and produces the downloadable PDF.
+The action that expands a Program’s Sections into Slides — resolving Song sections against the current Song library — and produces the downloadable PDF. The PDF file is a point-in-time copy; the Program itself stays live.
 _UI_: Exportar
-_Avoid_: generate, render, publish (unless a later meaning is introduced)
+_Avoid_: generate, render, publish (unless a later meaning is introduced); treating Export as freezing Trechos back onto the Program; treating the Program as an archive of past Exports
 
 **Editor**:
 A signed-in Google user marked as an Editor on their account; the only person who may create or edit Songs and Artists. Not every signed-in user is an Editor. Not the owner of Programs.

@@ -1,0 +1,3 @@
+# Song sections export live from the library
+
+Programs are plans for a gathering, not archives of past services. A Song section stores only a **live reference** to a Song; Program preview and Export both read the current library **title** and **Trechos**. Snapshot-on-add and any in-app pin/freeze are rejected for v1 — the downloaded PDF is the only point-in-time copy. If the referenced Song is missing, that section contributes no slides and both the cookie-owner edit UI and the public view show a broken reference; a Song with zero Trechos still yields a title slide. Editors changing the library do not notify Program owners.
