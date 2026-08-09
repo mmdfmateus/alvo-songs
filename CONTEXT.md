@@ -90,6 +90,6 @@ _UI_: Exportar
 _Avoid_: generate, render, publish (unless a later meaning is introduced)
 
 **Editor**:
-A signed-in Google user whose email is on the allowlist; the only person who may create or edit Songs and Artists. Not the owner of Programs.
+A signed-in Google user marked as an Editor on their account; the only person who may create or edit Songs and Artists. Not every signed-in user is an Editor. Not the owner of Programs.
 _UI_: editor / editores (copy, not a nav item)
-_Avoid_: Role, admin, operator, User (as the name of this concept); storing Editor as an RBAC role; using Editor for who may edit a Program
+_Avoid_: Role, admin, operator, User (as the name of this concept); storing Editor as an RBAC role or separate Editor entity; using Editor for who may edit a Program; treating any Google sign-in as Editor rights
