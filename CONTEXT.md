@@ -15,9 +15,9 @@ _UI_: Letra
 _Avoid_: lyrics (as an independently stored original); lyric sheet; treating Letra as the same as Lyric chunk
 
 **Lyric chunk**:
-One ordered, slide-sized unit of lyric text belonging to a Song. Initially derived from that Song’s Letra; thereafter independently editable.
+One ordered, slide-sized unit of lyric text belonging to a Song. Created automatically only once — from that Song’s Letra on create or import — then independently editable and never rewritten from Cifra or Letra.
 _UI_: Trecho
-_Avoid_: verse, estrofe (as the model name); slide (as the name of this concept); treating Lyric chunk as Letra or as Cifra; treating Trechos as a live view of Letra after they have been edited
+_Avoid_: verse, estrofe (as the model name); slide (as the name of this concept); treating Lyric chunk as Letra or as Cifra; treating Trechos as a live view of Letra; regenerating Trechos when the Cifra is saved; writing Trecho edits back into the Cifra
 
 **Artist**:
 A named performer or group a Song may optionally credit.

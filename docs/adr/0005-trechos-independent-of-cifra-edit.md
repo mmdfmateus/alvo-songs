@@ -1,0 +1,3 @@
+# Trechos stay independent after the initial seed
+
+Trechos are seeded from Letra only on Song create/import. After that, saving a new Cifra leaves Trechos unchanged — no auto-sync, no rebuild-from-Letra action in v1, and no save-time notice. Editors reshape Trechos only by hand; Trecho edits never write back into the Cifra. Always-regenerate and optional regenerate-on-save were rejected: Trechos are editorial slide units (often hand-tuned), most Cifra saves are chord fixes, and with live Program Export (ADR 0004) silent rebuilds would change gathering slides without a Program owner action. Empty Trechos stay empty until an Editor adds them.
