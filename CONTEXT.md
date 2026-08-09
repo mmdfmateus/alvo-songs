@@ -36,8 +36,8 @@ _Avoid_: catalog, repertoire, database; splitting public Catálogo from editor B
 
 **Program**:
 A named, ordered sequence of sections prepared for one gathering, which can be saved, reused, shared by link, and exported. Not listed in a public gallery; only the creating client may change or delete it; anyone with the link may view and Export.
-_UI_: Programa
-_Avoid_: presentation, slideshow, deck, PDF (as the name of this concept); a site-wide Program gallery; treating Program edit rights as an Editor privilege
+_UI_: Slides (nav / builder product area); a single saved Program is shown by its gathering name (e.g. “Culto 09/08”), under Meus slides
+_Avoid_: Programa as the nav or builder label; presentation, slideshow, deck, PDF (as the name of this concept); a site-wide Program gallery; treating Program edit rights as an Editor privilege
 
 **Section**:
 One typed unit in a Program’s order; it expands into one or more slides when exported.
@@ -57,7 +57,7 @@ _Avoid_: using “Song” alone for a placement in a Program; storing frozen Tre
 **Slide**:
 One page in the exported slideshow (title, lyric, marker, or blank).
 _UI_: Slide
-_Avoid_: page, frame
+_Avoid_: page, frame; using Slide (singular) as the name of the Program builder — that product area is Slides
 
 **Blank slide**:
 A Slide with no content, reserved for later fill-in outside the app (e.g. images in Canva).
