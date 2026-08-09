@@ -1,21 +1,26 @@
-# PROTOTYPE — Public IA variants (#10)
+# PROTOTYPE — Public information architecture (v2)
 
-Throwaway outlines for Alvo Cifras public/editor navigation. Not production.
+Throwaway UI for [Public information architecture](https://github.com/mmdfmateus/alvo-songs/issues/10).
+
+**Question:** What is the public (and editor) route/nav outline for Alvo Cifras?
+
+**Baseline:** previous Variant C (Biblioteca ↔ Programas mode shell).
+
+**References:**
+- [Alvo Cifras](https://cifras.alvodamocidade.com.br/) — search, Músicas/Artistas cards, song tabs + Escutar
+- [CifraClub song page](https://www.cifraclub.com.br/marcos-almeida/rio-torto/) — artist/song hierarchy, dense cifra reading
 
 ## Run
 
-Open `index.html` in a browser, or from this folder:
-
 ```bash
-python3 -m http.server 4173
+cd prototypes/public-ia && python3 -m http.server 4173
+# http://localhost:4173/?variant=A
 ```
 
-Then visit `http://localhost:4173/?variant=A` (or `B` / `C`). Use the floating bar to switch variants.
+| Variant | Idea |
+| --- | --- |
+| A | Alvo browse home + mode rail |
+| B | CifraClub reading focus (rail hides on song) |
+| C | Hybrid: Alvo sticky header + mode pills (no rail) |
 
-## Variants
-
-| | Idea |
-|---|---|
-| **A** | Biblioteca-first top nav — home is the song library; Programa is a peer top-level link |
-| **B** | Two-door home — land on Biblioteca \| Programa choice, then door-scoped chrome |
-| **C** | Mode rail — Bib ↔ Prog mode shell swaps the entire chrome |
+Not for `master` until a verdict is captured on the issue.
