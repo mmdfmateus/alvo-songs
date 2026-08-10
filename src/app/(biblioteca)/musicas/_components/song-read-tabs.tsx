@@ -5,7 +5,7 @@ import { useState } from "react";
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
 import type { CifraViewLine } from "~/lib/cifra";
 
-type ReadTab = "cifra" | "letra" | "escutar";
+type ReadTab = "cifra" | "letra" | "listen";
 
 export function SongReadTabs({
   cifraLines,
@@ -51,11 +51,11 @@ export function SongReadTabs({
           <button
             type="button"
             role="tab"
-            aria-selected={tab === "escutar"}
+            aria-selected={tab === "listen"}
             className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-              tab === "escutar" ? "bg-ink text-white" : "text-muted"
+              tab === "listen" ? "bg-ink text-white" : "text-muted"
             }`}
-            onClick={() => setTab("escutar")}
+            onClick={() => setTab("listen")}
           >
             Escutar
           </button>
