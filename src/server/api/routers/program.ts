@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import type { TRPCContext } from "~/server/api/context";
 import { createOwnerToken, hashOwnerToken } from "~/lib/program-owner";
 import { expandSections } from "~/lib/slides";
 
@@ -16,6 +17,11 @@ const titledPayload = z.object({
 
 const sectionInput = z.discriminatedUnion("type", [
   z.object({ type: z.literal("opening"), payload: openingPayload }),
+  z.object({
+    type: z.literal("song"),
+    songId: z.string().nullable(),
+    payload: z.object({}).optional().default({}),
+  }),
   z.object({ type: z.literal("announcements"), payload: titledPayload }),
   z.object({ type: z.literal("game"), payload: titledPayload }),
   z.object({ type: z.literal("moment"), payload: titledPayload }),
@@ -32,28 +38,83 @@ function assertOwner(ownerTokenHash: string, ownerToken: string) {
   }
 }
 
-function toPublicProgram(program: {
-  id: string;
-  name: string;
-  sections: {
+function sectionPersistData(
+  section: z.infer<typeof sectionInput>,
+  position: number,
+) {
+  return {
+    position,
+    type: section.type,
+    payload: section.payload,
+    songId: section.type === "song" ? section.songId : null,
+  };
+}
+
+async function resolveLiveSong(
+  db: TRPCContext["db"],
+  songId: string | null,
+) {
+  if (!songId) return null;
+  const song = await db.song.findUnique({
+    where: { id: songId },
+    include: { chunks: { orderBy: { position: "asc" } } },
+  });
+  if (!song) return null;
+  return {
+    id: song.id,
+    title: song.title,
+    chunks: song.chunks.map((chunk) => ({ text: chunk.text })),
+  };
+}
+
+async function toPublicProgram(
+  db: TRPCContext["db"],
+  program: {
     id: string;
-    position: number;
-    type: string;
-    songId: string | null;
-    payload: unknown;
-  }[];
-}) {
+    name: string;
+    sections: {
+      id: string;
+      position: number;
+      type: string;
+      songId: string | null;
+      payload: unknown;
+    }[];
+  },
+) {
   const sections = [...program.sections].sort((a, b) => a.position - b.position);
+  const resolved = await Promise.all(
+    sections.map(async (section) => {
+      if (section.type !== "song") {
+        return {
+          id: section.id,
+          position: section.position,
+          type: section.type,
+          payload: section.payload,
+        };
+      }
+      const song = await resolveLiveSong(db, section.songId);
+      return {
+        id: section.id,
+        position: section.position,
+        type: section.type,
+        payload: section.payload,
+        songId: section.songId,
+        song,
+      };
+    }),
+  );
+
   return {
     id: program.id,
     name: program.name,
-    sections: sections.map((section) => ({
-      id: section.id,
-      position: section.position,
-      type: section.type,
-      payload: section.payload,
-    })),
-    slides: expandSections(sections),
+    sections: resolved,
+    slides: expandSections(
+      resolved.map((section) =>
+        section.type === "song"
+          ? { type: section.type, payload: section.payload, song: section.song }
+          : { type: section.type, payload: section.payload },
+      ),
+    ),
   };
 }
 
@@ -72,11 +133,9 @@ export const programRouter = createTRPCRouter({
           name: input.name,
           ownerTokenHash: hashOwnerToken(ownerToken),
           sections: {
-            create: input.sections.map((section, position) => ({
-              position,
-              type: section.type,
-              payload: section.payload,
-            })),
+            create: input.sections.map((section, position) =>
+              sectionPersistData(section, position),
+            ),
           },
         },
       });
@@ -92,7 +151,7 @@ export const programRouter = createTRPCRouter({
         include: { sections: { orderBy: { position: "asc" } } },
       });
       if (!program) return null;
-      return toPublicProgram(program);
+      return toPublicProgram(ctx.db, program);
     }),
 
   forEdit: publicProcedure
@@ -106,7 +165,7 @@ export const programRouter = createTRPCRouter({
       if (hashOwnerToken(input.ownerToken) !== program.ownerTokenHash) {
         return null;
       }
-      return toPublicProgram(program);
+      return toPublicProgram(ctx.db, program);
     }),
 
   update: publicProcedure
@@ -131,9 +190,7 @@ export const programRouter = createTRPCRouter({
       await ctx.db.section.createMany({
         data: input.sections.map((section, position) => ({
           programId: input.id,
-          position,
-          type: section.type,
-          payload: section.payload,
+          ...sectionPersistData(section, position),
         })),
       });
 

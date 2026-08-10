@@ -12,7 +12,31 @@ export type Slide =
 export type ExpandableSection = {
   type: string;
   payload: unknown;
+  song?: { title: string; chunks: { text: string }[] } | null;
 };
+
+export type LivePreviewSongQuery = {
+  isFetched: boolean;
+  data?: { title: string; chunks: { text: string }[] } | null;
+};
+
+/** Live preview: loading is not a missing Song (ADR 0004). */
+export function resolveLivePreviewSong(
+  songId: string | null,
+  query: LivePreviewSongQuery | undefined,
+  listedTitle?: string,
+): { title: string; chunks: { text: string }[] } | null {
+  if (!songId) return null;
+  if (query?.data) {
+    return {
+      title: query.data.title,
+      chunks: query.data.chunks.map((chunk) => ({ text: chunk.text })),
+    };
+  }
+  if (query?.isFetched && query.data == null) return null;
+  if (listedTitle) return { title: listedTitle, chunks: [] };
+  return null;
+}
 
 function titled(payload: unknown, fallback: string): string {
   if (
@@ -67,6 +91,14 @@ export function expandSections(sections: ExpandableSection[]): Slide[] {
       }
       case "moment": {
         slides.push({ kind: "titleChip", title: titled(section.payload, "Momento") });
+        break;
+      }
+      case "song": {
+        if (!section.song) break;
+        slides.push({ kind: "titleChip", title: section.song.title });
+        for (const chunk of section.song.chunks) {
+          slides.push({ kind: "lyric", text: chunk.text });
+        }
         break;
       }
       default:

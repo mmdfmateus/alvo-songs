@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
 import { removeMyProgram, renameMyProgram } from "~/lib/my-programs";
@@ -10,6 +10,7 @@ import { clearOwnerTokenFromDocument } from "~/lib/program-owners-cookie";
 import {
   DEFAULT_COMMUNITY_NAME,
   expandSections,
+  resolveLivePreviewSong,
 } from "~/lib/slides";
 import { api } from "~/trpc/react";
 
@@ -23,10 +24,16 @@ type DraftSection =
       key: string;
       type: "announcements" | "game" | "moment";
       payload: { title: string };
+    }
+  | {
+      key: string;
+      type: "song";
+      songId: string | null;
     };
 
 const TYPE_LABEL: Record<DraftSection["type"], string> = {
   opening: "Abertura",
+  song: "Música",
   announcements: "Recados",
   game: "Brincadeira",
   moment: "Momento",
@@ -37,7 +44,7 @@ function newKey() {
 }
 
 function sectionsFromProgram(
-  sections: { type: string; payload: unknown }[],
+  sections: { type: string; payload: unknown; songId?: string | null }[],
 ): DraftSection[] {
   return sections.flatMap((section, index): DraftSection[] => {
     const key = `${section.type}-${index}`;
@@ -56,6 +63,9 @@ function sectionsFromProgram(
           },
         },
       ];
+    }
+    if (section.type === "song") {
+      return [{ key, type: "song", songId: section.songId ?? null }];
     }
     if (
       section.type === "announcements" ||
@@ -88,11 +98,113 @@ function toInput(sections: DraftSection[]) {
         },
       };
     }
+    if (section.type === "song") {
+      return {
+        type: "song" as const,
+        songId: section.songId,
+        payload: {},
+      };
+    }
     return {
       type: section.type,
       payload: { title: section.payload.title },
     };
   });
+}
+
+function SongPicker({
+  songId,
+  songs,
+  onChange,
+}: {
+  songId: string | null;
+  songs: { id: string; title: string }[];
+  onChange: (songId: string | null) => void;
+}) {
+  const detail = api.song.byId.useQuery(
+    { id: songId ?? "" },
+    { enabled: Boolean(songId) },
+  );
+  const missingFromLibrary =
+    Boolean(songId) && detail.isFetched && detail.data === null;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="flex flex-col gap-1 text-sm font-medium">
+        Música
+        <select
+          value={songId ?? ""}
+          onChange={(event) => onChange(event.target.value || null)}
+          className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
+        >
+          <option value="">Escolher música</option>
+          {songId && !songs.some((song) => song.id === songId) ? (
+            <option value={songId}>Música não encontrada</option>
+          ) : null}
+          {songs.map((song) => (
+            <option key={song.id} value={song.id}>
+              {song.title}
+            </option>
+          ))}
+        </select>
+      </label>
+      {missingFromLibrary ? (
+        <p className="text-sm text-accent">
+          Música não encontrada na Biblioteca
+        </p>
+      ) : null}
+      {!songId ? (
+        <p className="text-sm text-muted">Escolha uma música da Biblioteca.</p>
+      ) : null}
+    </div>
+  );
+}
+
+function LivePreview({
+  sections,
+  librarySongs,
+}: {
+  sections: DraftSection[];
+  librarySongs: { id: string; title: string }[];
+}) {
+  const songIds = [
+    ...new Set(
+      sections.flatMap((section) =>
+        section.type === "song" && section.songId ? [section.songId] : [],
+      ),
+    ),
+  ];
+  const songQueries = api.useQueries((t) =>
+    songIds.map((id) => t.song.byId({ id })),
+  );
+  const queryById = new Map(
+    songIds.map((id, index) => [id, songQueries[index]]),
+  );
+
+  const slides = expandSections(
+    sections.map((section) => {
+      if (section.type === "song") {
+        const query = section.songId ? queryById.get(section.songId) : undefined;
+        const listedTitle = librarySongs.find(
+          (song) => song.id === section.songId,
+        )?.title;
+        return {
+          type: "song",
+          payload: {},
+          song: resolveLivePreviewSong(
+            section.songId,
+            query
+              ? { isFetched: query.isFetched, data: query.data }
+              : undefined,
+            listedTitle,
+          ),
+        };
+      }
+      return { type: section.type, payload: section.payload };
+    }),
+  );
+
+  return <SlidePreview slides={slides} />;
 }
 
 export function ProgramBuilder({
@@ -102,7 +214,7 @@ export function ProgramBuilder({
   program: {
     id: string;
     name: string;
-    sections: { type: string; payload: unknown }[];
+    sections: { type: string; payload: unknown; songId?: string | null }[];
   };
   ownerToken: string;
 }) {
@@ -111,8 +223,7 @@ export function ProgramBuilder({
   const [sections, setSections] = useState<DraftSection[]>(() =>
     sectionsFromProgram(program.sections),
   );
-
-  const slides = useMemo(() => expandSections(toInput(sections)), [sections]);
+  const library = api.song.list.useQuery();
 
   const update = api.program.update.useMutation({
     onSuccess: (saved) => {
@@ -261,6 +372,16 @@ export function ProgramBuilder({
                     />
                   </label>
                 </>
+              ) : section.type === "song" ? (
+                <SongPicker
+                  songId={section.songId}
+                  songs={library.data ?? []}
+                  onChange={(songId) => {
+                    const copy = [...sections];
+                    copy[index] = { ...section, songId };
+                    setSections(copy);
+                  }}
+                />
               ) : (
                 <label className="flex flex-col gap-1 text-sm font-medium">
                   Título
@@ -285,6 +406,7 @@ export function ProgramBuilder({
             {(
               [
                 ["opening", "Abertura"],
+                ["song", "Música"],
                 ["announcements", "Recados"],
                 ["game", "Brincadeira"],
                 ["moment", "Momento"],
@@ -306,6 +428,13 @@ export function ProgramBuilder({
                           subtitle: "",
                         },
                       },
+                    ]);
+                    return;
+                  }
+                  if (type === "song") {
+                    setSections([
+                      ...sections,
+                      { key: newKey(), type: "song", songId: null },
                     ]);
                     return;
                   }
@@ -337,7 +466,7 @@ export function ProgramBuilder({
 
       <section>
         <h2 className="mb-3 text-sm font-semibold">Prévia</h2>
-        <SlidePreview slides={slides} />
+        <LivePreview sections={sections} librarySongs={library.data ?? []} />
       </section>
     </div>
   );
