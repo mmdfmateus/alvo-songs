@@ -5,6 +5,12 @@ export default defineConfig({
   test: {
     environment: "node",
     setupFiles: ["./src/test/setup.ts"],
+    exclude: [
+      "**/node_modules/**",
+      "**/.worktrees/**",
+      "**/.pnpm-store/**",
+      "**/dist/**",
+    ],
   },
   resolve: {
     alias: {

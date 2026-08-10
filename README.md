@@ -12,6 +12,7 @@ T3 App Router + Prisma on Postgres. Local DB is the same engine as production (D
 cp .env.example .env   # AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET
 ./start-database.sh
 pnpm db:migrate
+pnpm db:seed   # livrinho → ~110 Songs (Artist unset; flagged rows in Revisar)
 pnpm dev
 ```
 

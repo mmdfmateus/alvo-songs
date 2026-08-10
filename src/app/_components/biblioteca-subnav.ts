@@ -12,6 +12,7 @@ export function bibliotecaSubnav(isEditor: boolean): NavLink[] {
   if (isEditor) {
     links.push({ href: "/musicas/nova", label: "Nova música" });
     links.push({ href: "/artistas/novo", label: "Novo artista" });
+    links.push({ href: "/musicas/revisar", label: "Revisar" });
   }
 
   return links;
