@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f7f7f5;
+  --paper: #ffffff;
+  --ink: #141414;
+  --muted: #6b6b6b;
+  --line: #e4e4e0;
+  --accent: #dc2626;
+}
+
+@theme {
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --color-bg: var(--bg);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
