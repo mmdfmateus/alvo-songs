@@ -198,6 +198,34 @@ test("sending chunks: [] persists zero Trechos", async () => {
   expect(detail?.chunks).toEqual([]);
 });
 
+test("failed song.update does not wipe Trechos", async () => {
+  const { db, caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  const original = await caller.song.byId({ id: created.id });
+
+  const update = db.song.update;
+  db.song.update = async () => {
+    throw new Error("db down");
+  };
+  await expect(
+    caller.song.update({
+      id: created.id,
+      title: "Let It Be",
+      cifraText: LET_IT_BE,
+      chunks: [],
+    }),
+  ).rejects.toThrow("db down");
+  db.song.update = update;
+
+  const after = await caller.song.byId({ id: created.id });
+  expect(after?.chunks.map((chunk) => chunk.text)).toEqual(
+    original?.chunks.map((chunk) => chunk.text),
+  );
+});
+
 test("omitting chunks on update leaves existing Trechos unchanged", async () => {
   const { caller } = testCaller({ isEditor: true });
   const created = await caller.song.create({

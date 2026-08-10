@@ -106,24 +106,26 @@ export const songRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const cifra = parseOrThrow(input.cifraText);
 
-      if (input.chunks !== undefined) {
-        await ctx.db.lyricChunk.deleteMany({ where: { songId: input.id } });
-        await ctx.db.lyricChunk.createMany({
-          data: input.chunks.map((chunk, position) => ({
-            songId: input.id,
-            position,
-            text: chunk.text,
-          })),
-        });
-      }
+      return ctx.db.$transaction(async (tx) => {
+        if (input.chunks !== undefined) {
+          await tx.lyricChunk.deleteMany({ where: { songId: input.id } });
+          await tx.lyricChunk.createMany({
+            data: input.chunks.map((chunk, position) => ({
+              songId: input.id,
+              position,
+              text: chunk.text,
+            })),
+          });
+        }
 
-      return ctx.db.song.update({
-        where: { id: input.id },
-        data: {
-          title: input.title,
-          cifra,
-          artistId: input.artistId,
-        },
+        return tx.song.update({
+          where: { id: input.id },
+          data: {
+            title: input.title,
+            cifra,
+            artistId: input.artistId,
+          },
+        });
       });
     }),
 
