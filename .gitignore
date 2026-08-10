@@ -47,3 +47,7 @@ yarn-error.log*
 
 # prisma generated client (if a custom output path is used)
 /generated
+
+# local agent / package artifacts
+.worktrees/
+.pnpm-store/
