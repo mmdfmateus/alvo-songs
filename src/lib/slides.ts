@@ -12,6 +12,7 @@ export type Slide =
 export type ExpandableSection = {
   type: string;
   payload: unknown;
+  song?: { title: string; chunks: { text: string }[] } | null;
 };
 
 function titled(payload: unknown, fallback: string): string {
@@ -67,6 +68,14 @@ export function expandSections(sections: ExpandableSection[]): Slide[] {
       }
       case "moment": {
         slides.push({ kind: "titleChip", title: titled(section.payload, "Momento") });
+        break;
+      }
+      case "song": {
+        if (!section.song) break;
+        slides.push({ kind: "titleChip", title: section.song.title });
+        for (const chunk of section.song.chunks) {
+          slides.push({ kind: "lyric", text: chunk.text });
+        }
         break;
       }
       default:
