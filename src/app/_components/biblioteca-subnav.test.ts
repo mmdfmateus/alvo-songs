@@ -16,6 +16,7 @@ test("editor chrome adds Nova música and Novo artista, not an Editor nav item",
     { href: "/artistas", label: "Artistas" },
     { href: "/musicas/nova", label: "Nova música" },
     { href: "/artistas/novo", label: "Novo artista" },
+    { href: "/musicas/revisar", label: "Revisar" },
   ]);
   expect(links.map((link) => link.label)).not.toContain("Editor");
 });
