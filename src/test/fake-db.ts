@@ -292,6 +292,32 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
           [...chunks.values()].filter((chunk) => chunk.songId === where.songId),
           "position",
         ),
+      deleteMany: async ({ where }: { where: { songId: string } }) => {
+        let count = 0;
+        for (const [id, chunk] of chunks) {
+          if (chunk.songId === where.songId) {
+            chunks.delete(id);
+            count += 1;
+          }
+        }
+        return { count };
+      },
+      createMany: async ({
+        data,
+      }: {
+        data: { songId: string; position: number; text: string }[];
+      }) => {
+        for (const chunk of data) {
+          const row: ChunkRow = {
+            id: randomUUID(),
+            songId: chunk.songId,
+            position: chunk.position,
+            text: chunk.text,
+          };
+          chunks.set(row.id, row);
+        }
+        return { count: data.length };
+      },
     },
     program: {
       findUnique: async ({

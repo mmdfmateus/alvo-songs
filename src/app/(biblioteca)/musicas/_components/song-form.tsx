@@ -10,6 +10,8 @@ import { api } from "~/trpc/react";
 
 type ArtistOption = { id: string; name: string };
 
+type ChunkDraft = { key: string; text: string };
+
 type SongFormProps = {
   artists: ArtistOption[];
   song?: {
@@ -18,8 +20,13 @@ type SongFormProps = {
     artist: { id: string } | null;
     cifra: unknown;
     cifraText?: string;
+    chunks?: { id: string; text: string }[];
   };
 };
+
+function newChunkKey() {
+  return crypto.randomUUID();
+}
 
 export function SongForm({ artists, song }: SongFormProps) {
   const router = useRouter();
@@ -28,6 +35,19 @@ export function SongForm({ artists, song }: SongFormProps) {
   const [cifraText, setCifraText] = useState(
     song?.cifraText ?? (song ? cifraToCow(song.cifra) : ""),
   );
+  const [chunks, setChunks] = useState<ChunkDraft[]>(
+    song?.chunks?.map((chunk) => ({ key: chunk.id, text: chunk.text })) ?? [],
+  );
+
+  function moveChunk(index: number, delta: -1 | 1) {
+    const next = index + delta;
+    if (next < 0 || next >= chunks.length) return;
+    const copy = [...chunks];
+    const [item] = copy.splice(index, 1);
+    if (!item) return;
+    copy.splice(next, 0, item);
+    setChunks(copy);
+  }
 
   const preview = useMemo(() => {
     try {
@@ -66,7 +86,11 @@ export function SongForm({ artists, song }: SongFormProps) {
           artistId: artistId || undefined,
         };
         if (song) {
-          update.mutate({ id: song.id, ...payload });
+          update.mutate({
+            id: song.id,
+            ...payload,
+            chunks: chunks.map(({ text }) => ({ text })),
+          });
         } else {
           create.mutate(payload);
         }
@@ -121,6 +145,69 @@ export function SongForm({ artists, song }: SongFormProps) {
           </p>
         )}
       </section>
+      {song ? (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold">Trechos</h2>
+          {chunks.map((chunk, index) => (
+            <div
+              key={chunk.key}
+              className="flex flex-col gap-2 rounded-[10px] border border-line bg-paper p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold">Trecho</p>
+                <div className="flex gap-2 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => moveChunk(index, -1)}
+                    disabled={index === 0}
+                    className="text-muted hover:text-ink disabled:opacity-40"
+                  >
+                    Subir
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveChunk(index, 1)}
+                    disabled={index === chunks.length - 1}
+                    className="text-muted hover:text-ink disabled:opacity-40"
+                  >
+                    Descer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setChunks(chunks.filter((_, i) => i !== index))
+                    }
+                    className="font-semibold text-accent"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+              <textarea
+                value={chunk.text}
+                onChange={(event) => {
+                  const copy = [...chunks];
+                  const current = copy[index];
+                  if (!current) return;
+                  copy[index] = { ...current, text: event.target.value };
+                  setChunks(copy);
+                }}
+                rows={4}
+                className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal leading-relaxed"
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              setChunks([...chunks, { key: newChunkKey(), text: "" }])
+            }
+            className="self-start rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-[#fafafa]"
+          >
+            Adicionar trecho
+          </button>
+        </div>
+      ) : null}
       {error ? <p className="text-sm text-accent">{error}</p> : null}
       <div className="flex flex-wrap gap-2">
         <button

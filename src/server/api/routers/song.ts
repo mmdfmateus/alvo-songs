@@ -97,9 +97,26 @@ export const songRouter = createTRPCRouter({
   }),
 
   update: editorProcedure
-    .input(songInput.extend({ id: z.string().min(1) }))
+    .input(
+      songInput.extend({
+        id: z.string().min(1),
+        chunks: z.array(z.object({ text: z.string() })).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const cifra = parseOrThrow(input.cifraText);
+
+      if (input.chunks !== undefined) {
+        await ctx.db.lyricChunk.deleteMany({ where: { songId: input.id } });
+        await ctx.db.lyricChunk.createMany({
+          data: input.chunks.map((chunk, position) => ({
+            songId: input.id,
+            position,
+            text: chunk.text,
+          })),
+        });
+      }
+
       return ctx.db.song.update({
         where: { id: input.id },
         data: {
