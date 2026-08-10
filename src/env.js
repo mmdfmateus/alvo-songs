@@ -1,24 +1,24 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+/**
+ * `next build` always sets NODE_ENV=production, including Vercel preview.
+ * Require Auth.js secrets only on the production deploy (VERCEL_ENV), not on
+ * every production-mode build.
+ */
+const requireAuthSecrets = process.env.VERCEL_ENV === "production";
+
 export const env = createEnv({
   /**
    * Specify your server-side environment variables schema here. This way you can ensure the app
    * isn't built with invalid env vars.
    */
   server: {
-    AUTH_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
-    AUTH_GOOGLE_ID:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
-    AUTH_GOOGLE_SECRET:
-      process.env.NODE_ENV === "production"
-        ? z.string()
-        : z.string().optional(),
+    AUTH_SECRET: requireAuthSecrets ? z.string() : z.string().optional(),
+    AUTH_GOOGLE_ID: requireAuthSecrets ? z.string() : z.string().optional(),
+    AUTH_GOOGLE_SECRET: requireAuthSecrets
+      ? z.string()
+      : z.string().optional(),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
