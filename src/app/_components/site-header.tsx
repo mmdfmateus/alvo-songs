@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { bibliotecaSubnav } from "~/app/_components/biblioteca-subnav";
+import { SongSearch } from "~/app/_components/song-search";
 import { signOut } from "~/server/auth";
 import { api } from "~/trpc/server";
 
@@ -24,12 +25,7 @@ export async function SiteHeader({
           </span>
           Alvo Cifras
         </Link>
-        <input
-          className="min-w-44 flex-1 rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm"
-          placeholder="Procure por uma música ou artista"
-          aria-label="Procure por uma música ou artista"
-          readOnly
-        />
+        <SongSearch />
         <nav
           aria-label="Áreas"
           className="ml-auto inline-flex rounded-full bg-[#f0f0ec] p-0.5"

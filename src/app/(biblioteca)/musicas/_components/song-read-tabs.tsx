@@ -5,14 +5,18 @@ import { useState } from "react";
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
 import type { CifraViewLine } from "~/lib/cifra";
 
+type ReadTab = "cifra" | "letra" | "escutar";
+
 export function SongReadTabs({
   cifraLines,
   letra,
+  videoId,
 }: {
   cifraLines: CifraViewLine[];
   letra: string;
+  videoId?: string | null;
 }) {
-  const [tab, setTab] = useState<"cifra" | "letra">("cifra");
+  const [tab, setTab] = useState<ReadTab>("cifra");
 
   return (
     <div>
@@ -43,14 +47,35 @@ export function SongReadTabs({
         >
           Letra
         </button>
+        {videoId ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "escutar"}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+              tab === "escutar" ? "bg-ink text-white" : "text-muted"
+            }`}
+            onClick={() => setTab("escutar")}
+          >
+            Escutar
+          </button>
+        ) : null}
       </div>
       {tab === "cifra" ? (
         <CifraView lines={cifraLines} />
-      ) : (
+      ) : tab === "letra" ? (
         <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
           {letra || "Sem letra derivada desta Cifra."}
         </pre>
-      )}
+      ) : videoId ? (
+        <iframe
+          title="Escutar"
+          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="aspect-video w-full max-w-2xl rounded-[10px] border-0"
+        />
+      ) : null}
     </div>
   );
 }

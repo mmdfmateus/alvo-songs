@@ -135,3 +135,142 @@ test("editor can delete a Song", async () => {
   await caller.song.delete({ id: song.id });
   await expect(caller.song.byId({ id: song.id })).resolves.toBeNull();
 });
+
+test("anonymous can search Songs by title", async () => {
+  const { db } = testCaller({ isEditor: true });
+  const editor = testCaller({ db, isEditor: true }).caller;
+  await editor.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  await editor.song.create({
+    title: "Abre os Céus",
+    cifraText: "Yeah, abre os céus\nNa terra como no céu",
+  });
+
+  const anonymous = testCaller({ db, signedIn: false }).caller;
+  const results = await anonymous.song.search({ q: "let it" });
+  expect(results.map((song) => song.title)).toEqual(["Let It Be"]);
+});
+
+test("search matches Songs by Artist name", async () => {
+  const { db } = testCaller({ isEditor: true });
+  const editor = testCaller({ db, isEditor: true }).caller;
+  const beatles = await editor.artist.create({ name: "The Beatles" });
+  await editor.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    artistId: beatles.id,
+  });
+  await editor.song.create({
+    title: "Abre os Céus",
+    cifraText: "Yeah, abre os céus\nNa terra como no céu",
+  });
+
+  const anonymous = testCaller({ db, signedIn: false }).caller;
+  const results = await anonymous.song.search({ q: "beatles" });
+  expect(results.map((song) => song.title)).toEqual(["Let It Be"]);
+});
+
+test("search is accent-insensitive on title and Artist name", async () => {
+  const { db } = testCaller({ isEditor: true });
+  const editor = testCaller({ db, isEditor: true }).caller;
+  const nana = await editor.artist.create({ name: "Nanã" });
+  await editor.song.create({
+    title: "Coração do Pai",
+    cifraText: LET_IT_BE,
+  });
+  await editor.song.create({
+    title: "Águas",
+    cifraText: LET_IT_BE,
+    artistId: nana.id,
+  });
+
+  const anonymous = testCaller({ db, signedIn: false }).caller;
+  await expect(
+    anonymous.song.search({ q: "coracao" }),
+  ).resolves.toMatchObject([{ title: "Coração do Pai" }]);
+  await expect(anonymous.song.search({ q: "nana" })).resolves.toMatchObject([
+    { title: "Águas", artist: { name: "Nanã" } },
+  ]);
+});
+
+test("search is case-insensitive", async () => {
+  const { db } = testCaller({ isEditor: true });
+  const editor = testCaller({ db, isEditor: true }).caller;
+  await editor.song.create({
+    title: "Português",
+    cifraText: LET_IT_BE,
+  });
+  await editor.song.create({
+    title: "Abre os Céus",
+    cifraText: "Yeah, abre os céus\nNa terra como no céu",
+  });
+
+  const anonymous = testCaller({ db, signedIn: false }).caller;
+  const results = await anonymous.song.search({ q: "PORTUGUES" });
+  expect(results.map((song) => song.title)).toEqual(["Português"]);
+});
+
+test("editor can set optional videoId on create and update", async () => {
+  const { caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    videoId: "dQw4w9WgXcQ",
+  });
+
+  await expect(caller.song.byId({ id: created.id })).resolves.toMatchObject({
+    videoId: "dQw4w9WgXcQ",
+  });
+
+  await caller.song.update({
+    id: created.id,
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    videoId: "oHg5SJYRHA0",
+  });
+  await expect(caller.song.byId({ id: created.id })).resolves.toMatchObject({
+    videoId: "oHg5SJYRHA0",
+  });
+
+  await caller.song.update({
+    id: created.id,
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  await expect(caller.song.byId({ id: created.id })).resolves.toMatchObject({
+    videoId: null,
+  });
+});
+
+test("anonymous can search and read Escutar data without mutating", async () => {
+  const { db } = testCaller({ isEditor: true });
+  const editor = testCaller({ db, isEditor: true }).caller;
+  const song = await editor.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    videoId: "dQw4w9WgXcQ",
+  });
+
+  const anonymous = testCaller({ db, signedIn: false }).caller;
+  const results = await anonymous.song.search({ q: "Let It" });
+  expect(results.map((found) => found.title)).toEqual(["Let It Be"]);
+  await expect(anonymous.song.byId({ id: song.id })).resolves.toMatchObject({
+    title: "Let It Be",
+    videoId: "dQw4w9WgXcQ",
+  });
+
+  await expect(
+    anonymous.song.update({
+      id: song.id,
+      title: "Hacked",
+      cifraText: LET_IT_BE,
+      videoId: "hacked",
+    }),
+  ).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "UNAUTHORIZED",
+  );
+});
+

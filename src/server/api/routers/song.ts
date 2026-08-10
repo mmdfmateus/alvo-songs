@@ -8,11 +8,17 @@ import {
 } from "~/server/api/trpc";
 import { cifraToCow, parseCifra } from "~/lib/cifra-parse";
 import { deriveLetra, isCifra, seedLyricChunks } from "~/lib/cifra";
+import { searchSongs } from "~/server/song-search";
 
 const songInput = z.object({
   title: z.string().trim().min(1),
   cifraText: z.string().min(1),
   artistId: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : null)),
+  videoId: z
     .string()
     .trim()
     .optional()
@@ -43,6 +49,10 @@ export const songRouter = createTRPCRouter({
     });
   }),
 
+  search: publicProcedure
+    .input(z.object({ q: z.string().trim().min(1) }))
+    .query(({ ctx, input }) => searchSongs(ctx.db, input.q)),
+
   byId: publicProcedure
     .input(z.object({ id: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
@@ -58,6 +68,7 @@ export const songRouter = createTRPCRouter({
       return {
         id: song.id,
         title: song.title,
+        videoId: song.videoId,
         artist: song.artist
           ? {
               id: song.artist.id,
@@ -89,6 +100,7 @@ export const songRouter = createTRPCRouter({
         title: input.title,
         cifra,
         artistId: input.artistId,
+        videoId: input.videoId,
         chunks: {
           create: chunks.map((text, position) => ({ position, text })),
         },
@@ -106,6 +118,7 @@ export const songRouter = createTRPCRouter({
           title: input.title,
           cifra,
           artistId: input.artistId,
+          videoId: input.videoId,
         },
       });
     }),

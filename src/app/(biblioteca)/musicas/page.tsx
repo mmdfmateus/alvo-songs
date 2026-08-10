@@ -2,14 +2,26 @@ import Link from "next/link";
 
 import { api } from "~/trpc/server";
 
-export default async function SongsPage() {
-  const songs = await api.song.list();
+export default async function SongsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const query = q?.trim() ?? "";
+  const songs = query
+    ? await api.song.search({ q: query })
+    : await api.song.list();
 
   return (
     <>
       <h1 className="mb-3 text-2xl font-semibold tracking-tight">Músicas</h1>
       {songs.length === 0 ? (
-        <p className="text-muted">Nenhuma música na Biblioteca ainda.</p>
+        <p className="text-muted">
+          {query
+            ? "Nenhuma música encontrada."
+            : "Nenhuma música na Biblioteca ainda."}
+        </p>
       ) : (
         <ul className="divide-y divide-line rounded-[10px] border border-line bg-paper">
           {songs.map((song) => (

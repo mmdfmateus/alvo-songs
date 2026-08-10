@@ -18,13 +18,33 @@ type SongFormProps = {
     artist: { id: string } | null;
     cifra: unknown;
     cifraText?: string;
+    videoId?: string | null;
   };
 };
+
+function parseYoutubeVideoId(raw: string) {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  try {
+    const url = new URL(trimmed);
+    if (url.hostname === "youtu.be" || url.hostname.endsWith(".youtu.be")) {
+      return url.pathname.replace(/^\//, "").split("/")[0] ?? trimmed;
+    }
+    const v = url.searchParams.get("v");
+    if (v) return v;
+    const embed = url.pathname.match(/\/embed\/([^/?]+)/);
+    if (embed?.[1]) return embed[1];
+  } catch {
+    // raw id
+  }
+  return trimmed;
+}
 
 export function SongForm({ artists, song }: SongFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState(song?.title ?? "");
   const [artistId, setArtistId] = useState(song?.artist?.id ?? "");
+  const [videoId, setVideoId] = useState(song?.videoId ?? "");
   const [cifraText, setCifraText] = useState(
     song?.cifraText ?? (song ? cifraToCow(song.cifra) : ""),
   );
@@ -64,6 +84,7 @@ export function SongForm({ artists, song }: SongFormProps) {
           title,
           cifraText,
           artistId: artistId || undefined,
+          videoId: parseYoutubeVideoId(videoId) || undefined,
         };
         if (song) {
           update.mutate({ id: song.id, ...payload });
@@ -98,6 +119,18 @@ export function SongForm({ artists, song }: SongFormProps) {
           </select>
         </label>
       ) : null}
+      <label className="flex max-w-md flex-col gap-1 text-sm font-medium">
+        YouTube (opcional)
+        <input
+          value={videoId}
+          onChange={(event) => setVideoId(event.target.value)}
+          placeholder="ID do vídeo ou URL"
+          className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
+        />
+        <span className="font-normal text-muted">
+          Cole o id do vídeo (ex.: dQw4w9WgXcQ) ou a URL completa.
+        </span>
+      </label>
       <label className="flex flex-col gap-1 text-sm font-medium">
         Cifra
         <textarea
