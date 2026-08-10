@@ -1,3 +1,6 @@
+import { notFound } from "next/navigation";
+
+import { SongForm } from "~/app/(biblioteca)/musicas/_components/song-form";
 import { api } from "~/trpc/server";
 
 export default async function EditSongPage({
@@ -6,7 +9,11 @@ export default async function EditSongPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const viewer = await api.auth.viewer();
+  const [viewer, song, artists] = await Promise.all([
+    api.auth.viewer(),
+    api.song.byId({ id }),
+    api.artist.list(),
+  ]);
 
   if (!viewer.isEditor) {
     return (
@@ -19,12 +26,14 @@ export default async function EditSongPage({
     );
   }
 
+  if (!song) notFound();
+
   return (
     <>
       <h1 className="mb-3 text-2xl font-semibold tracking-tight">
         Editar música
       </h1>
-      <p className="text-muted">Em breve: editar a Cifra e os Trechos. ({id})</p>
+      <SongForm artists={artists} song={song} />
     </>
   );
 }

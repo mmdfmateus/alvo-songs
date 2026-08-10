@@ -1,3 +1,6 @@
+import { notFound } from "next/navigation";
+
+import { ArtistForm } from "~/app/(biblioteca)/artistas/_components/artist-form";
 import { api } from "~/trpc/server";
 
 export default async function EditArtistPage({
@@ -6,7 +9,10 @@ export default async function EditArtistPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const viewer = await api.auth.viewer();
+  const [viewer, artist] = await Promise.all([
+    api.auth.viewer(),
+    api.artist.byId({ id }),
+  ]);
 
   if (!viewer.isEditor) {
     return (
@@ -19,12 +25,14 @@ export default async function EditArtistPage({
     );
   }
 
+  if (!artist) notFound();
+
   return (
     <>
       <h1 className="mb-3 text-2xl font-semibold tracking-tight">
         Editar artista
       </h1>
-      <p className="text-muted">Em breve: editar o Artista. ({id})</p>
+      <ArtistForm artist={artist} />
     </>
   );
 }
