@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { expandSections } from "~/lib/slides";
+import { expandSections, resolveLivePreviewSong } from "~/lib/slides";
 
 test("Abertura expands to a brand opening slide", () => {
   expect(
@@ -92,6 +92,18 @@ test("Música with zero Trechos expands to a title-chip only", () => {
       },
     ]),
   ).toEqual([{ kind: "titleChip", title: "Instrumental" }]);
+});
+
+test("live preview uses library title while Song detail is loading", () => {
+  expect(
+    resolveLivePreviewSong("abc", { isFetched: false }, "Let It Be"),
+  ).toEqual({ title: "Let It Be", chunks: [] });
+});
+
+test("live preview treats fetched-null as a missing Song", () => {
+  expect(
+    resolveLivePreviewSong("abc", { isFetched: true, data: null }, "Let It Be"),
+  ).toBeNull();
 });
 
 test("empty Trecho text still emits a lyric slide", () => {

@@ -10,6 +10,7 @@ import { clearOwnerTokenFromDocument } from "~/lib/program-owners-cookie";
 import {
   DEFAULT_COMMUNITY_NAME,
   expandSections,
+  resolveLivePreviewSong,
 } from "~/lib/slides";
 import { api } from "~/trpc/react";
 
@@ -159,7 +160,13 @@ function SongPicker({
   );
 }
 
-function LivePreview({ sections }: { sections: DraftSection[] }) {
+function LivePreview({
+  sections,
+  librarySongs,
+}: {
+  sections: DraftSection[];
+  librarySongs: { id: string; title: string }[];
+}) {
   const songIds = [
     ...new Set(
       sections.flatMap((section) =>
@@ -170,24 +177,27 @@ function LivePreview({ sections }: { sections: DraftSection[] }) {
   const songQueries = api.useQueries((t) =>
     songIds.map((id) => t.song.byId({ id })),
   );
-  const songsById = new Map(
-    songIds.map((id, index) => [id, songQueries[index]?.data]),
+  const queryById = new Map(
+    songIds.map((id, index) => [id, songQueries[index]]),
   );
 
   const slides = expandSections(
     sections.map((section) => {
       if (section.type === "song") {
-        const data = section.songId ? songsById.get(section.songId) : undefined;
-        if (!data) {
-          return { type: "song", payload: {}, song: null };
-        }
+        const query = section.songId ? queryById.get(section.songId) : undefined;
+        const listedTitle = librarySongs.find(
+          (song) => song.id === section.songId,
+        )?.title;
         return {
           type: "song",
           payload: {},
-          song: {
-            title: data.title,
-            chunks: data.chunks.map((chunk) => ({ text: chunk.text })),
-          },
+          song: resolveLivePreviewSong(
+            section.songId,
+            query
+              ? { isFetched: query.isFetched, data: query.data }
+              : undefined,
+            listedTitle,
+          ),
         };
       }
       return { type: section.type, payload: section.payload };
@@ -456,7 +466,7 @@ export function ProgramBuilder({
 
       <section>
         <h2 className="mb-3 text-sm font-semibold">Prévia</h2>
-        <LivePreview sections={sections} />
+        <LivePreview sections={sections} librarySongs={library.data ?? []} />
       </section>
     </div>
   );
