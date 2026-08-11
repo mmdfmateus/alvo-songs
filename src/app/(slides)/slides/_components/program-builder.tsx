@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ExportPdfButton } from "~/app/(slides)/slides/_components/export-pdf-button";
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
 import { removeMyProgram, renameMyProgram } from "~/lib/my-programs";
 import { clearOwnerTokenFromDocument } from "~/lib/program-owners-cookie";
@@ -160,13 +161,10 @@ function SongPicker({
   );
 }
 
-function LivePreview({
-  sections,
-  librarySongs,
-}: {
-  sections: DraftSection[];
-  librarySongs: { id: string; title: string }[];
-}) {
+function useLivePreviewSlides(
+  sections: DraftSection[],
+  librarySongs: { id: string; title: string }[],
+) {
   const songIds = [
     ...new Set(
       sections.flatMap((section) =>
@@ -181,7 +179,7 @@ function LivePreview({
     songIds.map((id, index) => [id, songQueries[index]]),
   );
 
-  const slides = expandSections(
+  return expandSections(
     sections.map((section) => {
       if (section.type === "song") {
         const query = section.songId ? queryById.get(section.songId) : undefined;
@@ -203,8 +201,6 @@ function LivePreview({
       return { type: section.type, payload: section.payload };
     }),
   );
-
-  return <SlidePreview slides={slides} />;
 }
 
 export function ProgramBuilder({
@@ -224,6 +220,7 @@ export function ProgramBuilder({
     sectionsFromProgram(program.sections),
   );
   const library = api.song.list.useQuery();
+  const slides = useLivePreviewSlides(sections, library.data ?? []);
 
   const update = api.program.update.useMutation({
     onSuccess: (saved) => {
@@ -466,7 +463,8 @@ export function ProgramBuilder({
 
       <section>
         <h2 className="mb-3 text-sm font-semibold">Prévia</h2>
-        <LivePreview sections={sections} librarySongs={library.data ?? []} />
+        <ExportPdfButton slides={slides} programName={name} />
+        <SlidePreview slides={slides} />
       </section>
     </div>
   );
