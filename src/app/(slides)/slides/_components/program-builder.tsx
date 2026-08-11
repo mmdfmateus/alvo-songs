@@ -703,13 +703,6 @@ export function ProgramBuilder({
         </div>
 
         {error ? <p className="text-sm text-accent">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={pending}
-          className="self-start rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          Salvar
-        </button>
       </form>
 
       <section>
