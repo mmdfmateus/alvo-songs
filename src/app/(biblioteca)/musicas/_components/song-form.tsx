@@ -207,9 +207,11 @@ export function SongForm({ artists, song }: SongFormProps) {
           videoId: draft.videoId,
           chunks: draft.chunks,
         });
-        refreshRef.current();
       },
-      onStatus: setAutosaveStatus,
+      onStatus: (next) => {
+        setAutosaveStatus(next);
+        if (next === "saved") refreshRef.current();
+      },
     });
     autosaveRef.current = autosave;
     return () => {

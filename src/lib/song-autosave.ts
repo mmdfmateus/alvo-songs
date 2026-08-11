@@ -22,6 +22,8 @@ export function createSongAutosave(options: {
   let status: SongAutosaveStatus = "idle";
   let generation = 0;
   let latest: SongAutosaveNotify | null = null;
+  let inFlight = false;
+  let pending = false;
 
   function setStatus(next: SongAutosaveStatus) {
     status = next;
@@ -58,17 +60,27 @@ export function createSongAutosave(options: {
   }
 
   async function runSave() {
+    if (inFlight) {
+      pending = true;
+      return;
+    }
     const draft = latest;
     if (!draft || !isSavable(draft)) return;
     const gen = generation;
+    inFlight = true;
+    pending = false;
     setStatus("saving");
     try {
       await options.save(payload(draft));
-      if (gen !== generation) return;
-      setStatus("saved");
+      if (gen === generation) setStatus("saved");
     } catch {
-      if (gen !== generation) return;
-      setStatus("error");
+      if (gen === generation) setStatus("error");
+    } finally {
+      inFlight = false;
+    }
+    if (pending && latest && isSavable(latest)) {
+      pending = false;
+      void runSave();
     }
   }
 
@@ -93,6 +105,7 @@ export function createSongAutosave(options: {
     },
     dispose() {
       generation += 1;
+      pending = false;
       clearTimer();
     },
   };

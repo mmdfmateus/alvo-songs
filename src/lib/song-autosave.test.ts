@@ -146,6 +146,44 @@ test("stale in-flight save does not report saved or error for the current draft"
   autosave.dispose();
 });
 
+test("in-flight saves serialize so an older payload cannot finish last", async () => {
+  vi.useFakeTimers();
+  const first = deferredSave();
+  const second = deferredSave();
+  let saveCount = 0;
+  const savedTitles: string[] = [];
+
+  const autosave = createSongAutosave({
+    save: (draft) => {
+      savedTitles.push(draft.title);
+      saveCount += 1;
+      return saveCount === 1 ? first.promise : second.promise;
+    },
+  });
+
+  autosave.notify({ ...VALID_DRAFT, title: "Primeira" });
+  await vi.advanceTimersByTimeAsync(SONG_AUTOSAVE_DELAY_MS);
+  expect(savedTitles).toEqual(["Primeira"]);
+  expect(autosave.getStatus()).toBe("saving");
+
+  autosave.notify({ ...VALID_DRAFT, title: "Segunda" });
+  await vi.advanceTimersByTimeAsync(SONG_AUTOSAVE_DELAY_MS);
+  expect(savedTitles).toEqual(["Primeira"]);
+
+  first.resolve();
+  await Promise.resolve();
+  expect(savedTitles).toEqual(["Primeira", "Segunda"]);
+  expect(["idle", "saving"]).toContain(autosave.getStatus());
+  expect(autosave.getStatus()).not.toBe("saved");
+
+  second.resolve();
+  await Promise.resolve();
+  expect(autosave.getStatus()).toBe("saved");
+  expect(savedTitles).toEqual(["Primeira", "Segunda"]);
+
+  autosave.dispose();
+});
+
 test("stale in-flight error does not report error for the current draft", async () => {
   vi.useFakeTimers();
   const first = deferredSave();
