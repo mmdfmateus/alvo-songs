@@ -56,12 +56,5 @@ export default async function ProgramEditPage({
     );
   }
 
-  return (
-    <>
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">
-        Editar slides
-      </h1>
-      <ProgramBuilder program={editable} ownerToken={ownerToken} />
-    </>
-  );
+  return <ProgramBuilder program={editable} ownerToken={ownerToken} />;
 }

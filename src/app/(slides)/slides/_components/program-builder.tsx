@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import {
+  ExportPdfButton,
+  ExportPdfHint,
+} from "~/app/(slides)/slides/_components/export-pdf-button";
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
 import { removeMyProgram, renameMyProgram } from "~/lib/my-programs";
+import {
+  createProgramAutosave,
+  type ProgramAutosaveDraft,
+  type ProgramAutosaveStatus,
+} from "~/lib/program-autosave";
 import { clearOwnerTokenFromDocument } from "~/lib/program-owners-cookie";
 import {
   DEFAULT_COMMUNITY_NAME,
@@ -43,11 +52,110 @@ function newKey() {
   return crypto.randomUUID();
 }
 
+function IconArrowUp({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </svg>
+  );
+}
+
+function IconArrowDown({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </svg>
+  );
+}
+
+function IconTrash({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+function IconGrip({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <circle cx="9" cy="7" r="1.5" />
+      <circle cx="15" cy="7" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="17" r="1.5" />
+      <circle cx="15" cy="17" r="1.5" />
+    </svg>
+  );
+}
+
+function IconPublicLink({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  );
+}
+
 function sectionsFromProgram(
-  sections: { type: string; payload: unknown; songId?: string | null }[],
+  sections: {
+    id?: string;
+    type: string;
+    payload: unknown;
+    songId?: string | null;
+  }[],
 ): DraftSection[] {
-  return sections.flatMap((section, index): DraftSection[] => {
-    const key = `${section.type}-${index}`;
+  return sections.flatMap((section): DraftSection[] => {
+    const key = section.id ?? newKey();
     if (section.type === "opening") {
       const payload = (section.payload ?? {}) as {
         communityName?: string;
@@ -85,7 +193,7 @@ function sectionsFromProgram(
   });
 }
 
-function toInput(sections: DraftSection[]) {
+function toInput(sections: DraftSection[]): ProgramAutosaveDraft["sections"] {
   return sections.map((section) => {
     if (section.type === "opening") {
       return {
@@ -130,24 +238,22 @@ function SongPicker({
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="flex flex-col gap-1 text-sm font-medium">
-        Música
-        <select
-          value={songId ?? ""}
-          onChange={(event) => onChange(event.target.value || null)}
-          className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
-        >
-          <option value="">Escolher música</option>
-          {songId && !songs.some((song) => song.id === songId) ? (
-            <option value={songId}>Música não encontrada</option>
-          ) : null}
-          {songs.map((song) => (
-            <option key={song.id} value={song.id}>
-              {song.title}
-            </option>
-          ))}
-        </select>
-      </label>
+      <select
+        aria-label="Música"
+        value={songId ?? ""}
+        onChange={(event) => onChange(event.target.value || null)}
+        className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
+      >
+        <option value="">Escolher música</option>
+        {songId && !songs.some((song) => song.id === songId) ? (
+          <option value={songId}>Música não encontrada</option>
+        ) : null}
+        {songs.map((song) => (
+          <option key={song.id} value={song.id}>
+            {song.title}
+          </option>
+        ))}
+      </select>
       {missingFromLibrary ? (
         <p className="text-sm text-accent">
           Música não encontrada na Biblioteca
@@ -160,13 +266,10 @@ function SongPicker({
   );
 }
 
-function LivePreview({
-  sections,
-  librarySongs,
-}: {
-  sections: DraftSection[];
-  librarySongs: { id: string; title: string }[];
-}) {
+function useLivePreviewSlides(
+  sections: DraftSection[],
+  librarySongs: { id: string; title: string }[],
+) {
   const songIds = [
     ...new Set(
       sections.flatMap((section) =>
@@ -203,8 +306,11 @@ function LivePreview({
       return { type: section.type, payload: section.payload };
     }),
   );
+  const songsFetched = songIds.every(
+    (id) => queryById.get(id)?.isFetched === true,
+  );
 
-  return <SlidePreview slides={slides} />;
+  return { slides, songsFetched };
 }
 
 export function ProgramBuilder({
@@ -214,7 +320,12 @@ export function ProgramBuilder({
   program: {
     id: string;
     name: string;
-    sections: { type: string; payload: unknown; songId?: string | null }[];
+    sections: {
+      id?: string;
+      type: string;
+      payload: unknown;
+      songId?: string | null;
+    }[];
   };
   ownerToken: string;
 }) {
@@ -223,14 +334,20 @@ export function ProgramBuilder({
   const [sections, setSections] = useState<DraftSection[]>(() =>
     sectionsFromProgram(program.sections),
   );
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] =
+    useState<ProgramAutosaveStatus>("idle");
+  const autosaveRef = useRef<ReturnType<typeof createProgramAutosave> | null>(
+    null,
+  );
   const library = api.song.list.useQuery();
+  const { slides, songsFetched } = useLivePreviewSlides(
+    sections,
+    library.data ?? [],
+  );
 
-  const update = api.program.update.useMutation({
-    onSuccess: (saved) => {
-      renameMyProgram(saved.id, saved.name);
-      router.refresh();
-    },
-  });
+  const update = api.program.update.useMutation();
   const remove = api.program.delete.useMutation({
     onSuccess: () => {
       removeMyProgram(program.id);
@@ -239,52 +356,139 @@ export function ProgramBuilder({
     },
   });
 
-  const pending = update.isPending || remove.isPending;
-  const error = update.error?.message ?? remove.error?.message;
+  const mutateUpdateRef = useRef(update.mutateAsync);
+  mutateUpdateRef.current = update.mutateAsync;
+  const refreshRef = useRef(() => router.refresh());
+  refreshRef.current = () => router.refresh();
+  const renameRef = useRef(renameMyProgram);
+  renameRef.current = renameMyProgram;
 
-  function move(index: number, delta: number) {
+  useEffect(() => {
+    const autosave = createProgramAutosave({
+      save: async (draft) => {
+        const saved = await mutateUpdateRef.current({
+          id: program.id,
+          ownerToken,
+          name: draft.name,
+          sections: draft.sections,
+        });
+        renameRef.current(saved.id, saved.name);
+      },
+      onStatus: (status) => {
+        setAutosaveStatus(status);
+        if (status === "saved") refreshRef.current();
+      },
+    });
+    autosaveRef.current = autosave;
+    return () => {
+      autosave.dispose();
+      autosaveRef.current = null;
+    };
+  }, [program.id, ownerToken]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    autosaveRef.current?.notify({
+      name,
+      sections: toInput(sections),
+    });
+  }, [dirty, name, sections]);
+
+  function markDirty() {
+    setDirty(true);
+    if (update.isError) update.reset();
+  }
+
+  function reorderSection(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || to >= sections.length) return;
+    markDirty();
+    setSections((prev) => {
+      const copy = [...prev];
+      const [item] = copy.splice(from, 1);
+      if (!item) return prev;
+      copy.splice(to, 0, item);
+      return copy;
+    });
+  }
+
+  function move(index: number, delta: -1 | 1) {
     const next = index + delta;
     if (next < 0 || next >= sections.length) return;
-    const copy = [...sections];
-    const [item] = copy.splice(index, 1);
-    if (!item) return;
-    copy.splice(next, 0, item);
-    setSections(copy);
+    reorderSection(index, next);
   }
+
+  const pending = update.isPending || remove.isPending;
+  const error =
+    (autosaveStatus === "error" ? update.error?.message : undefined) ??
+    remove.error?.message;
+  const saveStatus =
+    autosaveStatus === "saving"
+      ? "Salvando…"
+      : autosaveStatus === "error"
+        ? "Erro ao salvar"
+        : autosaveStatus === "saved"
+          ? "Salvo"
+          : null;
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href={`/slides/${program.id}`}
-          className="text-sm font-semibold text-muted no-underline hover:text-ink"
-        >
-          Ver link público
-        </Link>
-        <button
-          type="button"
-          disabled={pending}
-          className="text-sm font-semibold text-accent disabled:opacity-60"
-          onClick={() => {
-            if (window.confirm("Excluir estes Slides deste dispositivo?")) {
-              remove.mutate({ id: program.id, ownerToken });
-            }
-          }}
-        >
-          Excluir
-        </button>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Editar slides
+          </h1>
+          {saveStatus ? (
+            <p
+              className={`text-sm ${
+                autosaveStatus === "error" ? "text-accent" : "text-muted"
+              }`}
+              aria-live="polite"
+            >
+              {saveStatus}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportPdfButton
+            slides={slides}
+            programName={name}
+            disabled={!songsFetched}
+            showHint={false}
+          />
+          <Link
+            href={`/slides/${program.id}`}
+            aria-label="Ver link público"
+            title="Ver link público"
+            className="rounded-md p-1.5 text-muted no-underline hover:bg-[#f0f0ec] hover:text-ink"
+          >
+            <IconPublicLink className="size-4" />
+          </Link>
+          <button
+            type="button"
+            disabled={pending}
+            aria-label="Excluir"
+            title="Excluir"
+            className="rounded-md p-1.5 text-accent hover:bg-[#f0f0ec] disabled:opacity-60"
+            onClick={() => {
+              if (window.confirm("Excluir estes Slides deste dispositivo?")) {
+                remove.mutate({ id: program.id, ownerToken });
+              }
+            }}
+          >
+            <IconTrash className="size-4" />
+          </button>
+        </div>
       </div>
 
       <form
         className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault();
-          update.mutate({
-            id: program.id,
-            ownerToken,
+          autosaveRef.current?.notify({
             name,
             sections: toInput(sections),
           });
+          autosaveRef.current?.flush();
         }}
       >
         <label className="flex max-w-md flex-col gap-1 text-sm font-medium">
@@ -292,7 +496,10 @@ export function ProgramBuilder({
           <input
             required
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              markDirty();
+              setName(event.target.value);
+            }}
             className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
           />
         </label>
@@ -302,33 +509,71 @@ export function ProgramBuilder({
           {sections.map((section, index) => (
             <div
               key={section.key}
-              className="flex flex-col gap-2 rounded-[10px] border border-line bg-paper p-4"
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (dragIndex === null || dragIndex === index) return;
+                reorderSection(dragIndex, index);
+                setDragIndex(index);
+              }}
+              className={`flex flex-col gap-2 rounded-[10px] border border-line bg-paper p-4 ${
+                dragIndex === index ? "opacity-60" : ""
+              }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold">{TYPE_LABEL[section.type]}</p>
-                <div className="flex gap-2 text-sm">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    draggable
+                    aria-label="Arrastar seção"
+                    title="Arrastar"
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", String(index));
+                      setDragIndex(index);
+                    }}
+                    onDragEnd={() => setDragIndex(null)}
+                    className="cursor-grab touch-none text-muted hover:text-ink active:cursor-grabbing"
+                  >
+                    <IconGrip className="size-4" />
+                  </button>
+                  <p className="text-sm font-semibold">
+                    {TYPE_LABEL[section.type]}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label="Subir"
+                    title="Subir"
                     onClick={() => move(index, -1)}
-                    className="text-muted hover:text-ink"
+                    disabled={index === 0}
+                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
-                    Subir
+                    <IconArrowUp className="size-4" />
                   </button>
                   <button
                     type="button"
+                    aria-label="Descer"
+                    title="Descer"
                     onClick={() => move(index, 1)}
-                    className="text-muted hover:text-ink"
+                    disabled={index === sections.length - 1}
+                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
-                    Descer
+                    <IconArrowDown className="size-4" />
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      setSections(sections.filter((_, i) => i !== index))
-                    }
-                    className="font-semibold text-accent"
+                    aria-label="Remover"
+                    title="Remover"
+                    onClick={() => {
+                      if (window.confirm("Remover esta seção?")) {
+                        markDirty();
+                        setSections(sections.filter((_, i) => i !== index));
+                      }
+                    }}
+                    className="rounded-md p-1.5 text-accent hover:bg-[#f0f0ec]"
                   >
-                    Remover
+                    <IconTrash className="size-4" />
                   </button>
                 </div>
               </div>
@@ -340,6 +585,7 @@ export function ProgramBuilder({
                       required
                       value={section.payload.communityName}
                       onChange={(event) => {
+                        markDirty();
                         const copy = [...sections];
                         copy[index] = {
                           ...section,
@@ -358,6 +604,7 @@ export function ProgramBuilder({
                     <input
                       value={section.payload.subtitle}
                       onChange={(event) => {
+                        markDirty();
                         const copy = [...sections];
                         copy[index] = {
                           ...section,
@@ -377,28 +624,28 @@ export function ProgramBuilder({
                   songId={section.songId}
                   songs={library.data ?? []}
                   onChange={(songId) => {
+                    markDirty();
                     const copy = [...sections];
                     copy[index] = { ...section, songId };
                     setSections(copy);
                   }}
                 />
               ) : (
-                <label className="flex flex-col gap-1 text-sm font-medium">
-                  Título
-                  <input
-                    required
-                    value={section.payload.title}
-                    onChange={(event) => {
-                      const copy = [...sections];
-                      copy[index] = {
-                        ...section,
-                        payload: { title: event.target.value },
-                      };
-                      setSections(copy);
-                    }}
-                    className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
-                  />
-                </label>
+                <input
+                  required
+                  aria-label="Título"
+                  value={section.payload.title}
+                  onChange={(event) => {
+                    markDirty();
+                    const copy = [...sections];
+                    copy[index] = {
+                      ...section,
+                      payload: { title: event.target.value },
+                    };
+                    setSections(copy);
+                  }}
+                  className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
+                />
               )}
             </div>
           ))}
@@ -417,6 +664,7 @@ export function ProgramBuilder({
                 type="button"
                 className="rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-[#fafafa]"
                 onClick={() => {
+                  markDirty();
                   if (type === "opening") {
                     setSections([
                       ...sections,
@@ -455,18 +703,14 @@ export function ProgramBuilder({
         </div>
 
         {error ? <p className="text-sm text-accent">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={pending}
-          className="self-start rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          Salvar
-        </button>
       </form>
 
       <section>
         <h2 className="mb-3 text-sm font-semibold">Prévia</h2>
-        <LivePreview sections={sections} librarySongs={library.data ?? []} />
+        <div className="mb-6">
+          <ExportPdfHint />
+        </div>
+        <SlidePreview slides={slides} />
       </section>
     </div>
   );
