@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { LivrinhoFlags } from "~/app/(biblioteca)/musicas/_components/livrinho-flags";
+import { livrinhoFlagsByTitle, loadImportedLivrinho } from "~/lib/livrinho-import";
 import { api } from "~/trpc/server";
 
 export default async function SongsPage({
@@ -9,9 +11,13 @@ export default async function SongsPage({
 }) {
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
-  const songs = query
-    ? await api.song.search({ q: query })
-    : await api.song.list();
+  const [songs, viewer] = await Promise.all([
+    query ? api.song.search({ q: query }) : api.song.list(),
+    api.auth.viewer(),
+  ]);
+  const flagsByTitle = viewer.isEditor
+    ? livrinhoFlagsByTitle(loadImportedLivrinho())
+    : new Map();
 
   return (
     <>
@@ -24,21 +30,25 @@ export default async function SongsPage({
         </p>
       ) : (
         <ul className="divide-y divide-line rounded-[10px] border border-line bg-paper">
-          {songs.map((song) => (
-            <li key={song.id}>
-              <Link
-                href={`/musicas/${song.id}`}
-                className="block px-4 py-3 no-underline hover:bg-[#fafafa]"
-              >
-                <span className="font-medium">{song.title}</span>
-                {song.artist ? (
-                  <span className="mt-0.5 block text-sm text-muted">
-                    {song.artist.name}
-                  </span>
-                ) : null}
-              </Link>
-            </li>
-          ))}
+          {songs.map((song) => {
+            const flags = flagsByTitle.get(song.title) ?? [];
+            return (
+              <li key={song.id}>
+                <Link
+                  href={`/musicas/${song.id}`}
+                  className="block px-4 py-3 no-underline hover:bg-[#fafafa]"
+                >
+                  <span className="font-medium">{song.title}</span>
+                  {song.artist ? (
+                    <span className="mt-0.5 block text-sm text-muted">
+                      {song.artist.name}
+                    </span>
+                  ) : null}
+                  {viewer.isEditor ? <LivrinhoFlags flags={flags} /> : null}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </>

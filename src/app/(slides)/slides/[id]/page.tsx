@@ -12,10 +12,20 @@ export default async function ProgramViewPage({
   const program = await api.program.byId({ id });
   if (!program) notFound();
 
+  const brokenRefs = program.sections.filter(
+    (section) =>
+      section.type === "song" && section.songId && section.song === null,
+  );
+
   return (
     <>
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">{program.name}</h1>
       <p className="mb-6 text-sm text-muted">Visualização pública. Só quem criou pode editar.</p>
+      {brokenRefs.length > 0 ? (
+        <p className="mb-4 text-sm text-accent">
+          Música não encontrada na Biblioteca
+        </p>
+      ) : null}
       <SlidePreview slides={program.slides} />
     </>
   );

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LivrinhoFlags } from "~/app/(biblioteca)/musicas/_components/livrinho-flags";
 import { SongReadTabs } from "~/app/(biblioteca)/musicas/_components/song-read-tabs";
 import { cifraViewLines } from "~/lib/cifra";
+import { livrinhoFlagsByTitle, loadImportedLivrinho } from "~/lib/livrinho-import";
 import { api } from "~/trpc/server";
 
 export default async function SongPage({
@@ -17,6 +19,10 @@ export default async function SongPage({
   ]);
 
   if (!song) notFound();
+
+  const flags = viewer.isEditor
+    ? (livrinhoFlagsByTitle(loadImportedLivrinho()).get(song.title) ?? [])
+    : [];
 
   return (
     <>
@@ -41,6 +47,14 @@ export default async function SongPage({
                 >
                   {song.artist.name}
                 </Link>
+              ) : null}
+              {viewer.isEditor && flags.length > 0 ? (
+                <div className="mt-2">
+                  <p className="text-sm text-muted">
+                    Sinalizada na importação do livrinho.
+                  </p>
+                  <LivrinhoFlags flags={flags} />
+                </div>
               ) : null}
             </div>
           </div>

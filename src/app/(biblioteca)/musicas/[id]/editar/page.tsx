@@ -28,12 +28,5 @@ export default async function EditSongPage({
 
   if (!song) notFound();
 
-  return (
-    <>
-      <h1 className="mb-3 text-2xl font-semibold tracking-tight">
-        Editar música
-      </h1>
-      <SongForm artists={artists} song={song} />
-    </>
-  );
+  return <SongForm artists={artists} song={song} />;
 }

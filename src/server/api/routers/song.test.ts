@@ -274,3 +274,173 @@ test("anonymous can search and read Escutar data without mutating", async () => 
   );
 });
 
+test("editor can replace Trechos via song.update chunks", async () => {
+  const { caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+
+  await caller.song.update({
+    id: created.id,
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    chunks: [
+      { text: "Whisper words of wisdom" },
+      { text: "Let it be, let it be" },
+      { text: "There will be an answer" },
+    ],
+  });
+
+  const detail = await caller.song.byId({ id: created.id });
+  expect(detail?.chunks.map((chunk) => chunk.text)).toEqual([
+    "Whisper words of wisdom",
+    "Let it be, let it be",
+    "There will be an answer",
+  ]);
+});
+
+test("empty Trecho text is allowed on song.update", async () => {
+  const { caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+
+  await caller.song.update({
+    id: created.id,
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    chunks: [{ text: "" }, { text: "Let it be" }],
+  });
+
+  const detail = await caller.song.byId({ id: created.id });
+  expect(detail?.chunks.map((chunk) => chunk.text)).toEqual(["", "Let it be"]);
+});
+
+test("sending chunks: [] persists zero Trechos", async () => {
+  const { caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+
+  await caller.song.update({
+    id: created.id,
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    chunks: [],
+  });
+
+  const detail = await caller.song.byId({ id: created.id });
+  expect(detail?.chunks).toEqual([]);
+});
+
+test("failed song.update does not wipe Trechos", async () => {
+  const { db, caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  const original = await caller.song.byId({ id: created.id });
+
+  const update = db.song.update;
+  db.song.update = async () => {
+    throw new Error("db down");
+  };
+  await expect(
+    caller.song.update({
+      id: created.id,
+      title: "Let It Be",
+      cifraText: LET_IT_BE,
+      chunks: [],
+    }),
+  ).rejects.toThrow("db down");
+  db.song.update = update;
+
+  const after = await caller.song.byId({ id: created.id });
+  expect(after?.chunks.map((chunk) => chunk.text)).toEqual(
+    original?.chunks.map((chunk) => chunk.text),
+  );
+});
+
+test("omitting chunks on update leaves existing Trechos unchanged", async () => {
+  const { caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+
+  await caller.song.update({
+    id: created.id,
+    title: "Let It Be (live)",
+    cifraText: LET_IT_BE,
+  });
+
+  const updated = await caller.song.byId({ id: created.id });
+  expect(updated?.title).toBe("Let It Be (live)");
+  expect(updated?.chunks.map((chunk) => chunk.text)).toEqual([
+    "Let it be, let it be, let it be, let it be",
+    "Whisper words of wisdom, let it be",
+  ]);
+});
+
+test("updating Trechos does not change stored Cifra", async () => {
+  const { caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  const original = await caller.song.byId({ id: created.id });
+
+  await caller.song.update({
+    id: created.id,
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+    chunks: [{ text: "Hand-edited trecho" }],
+  });
+
+  const updated = await caller.song.byId({ id: created.id });
+  expect(updated?.cifra).toEqual(original?.cifra);
+  expect(updated?.chunks.map((chunk) => chunk.text)).toEqual([
+    "Hand-edited trecho",
+  ]);
+});
+
+test("anonymous and non-editor cannot update Trechos", async () => {
+  const { db, caller: editor } = testCaller({ isEditor: true });
+  const song = await editor.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+
+  await expect(
+    testCaller({ db, signedIn: false }).caller.song.update({
+      id: song.id,
+      title: "Let It Be",
+      cifraText: LET_IT_BE,
+      chunks: [{ text: "Hacked" }],
+    }),
+  ).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "UNAUTHORIZED",
+  );
+
+  await expect(
+    testCaller({ db, isEditor: false, userId: "user-2" }).caller.song.update({
+      id: song.id,
+      title: "Let It Be",
+      cifraText: LET_IT_BE,
+      chunks: [{ text: "Hacked" }],
+    }),
+  ).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "FORBIDDEN",
+  );
+
+  const detail = await editor.song.byId({ id: song.id });
+  expect(detail?.chunks.map((chunk) => chunk.text)).toEqual([
+    "Let it be, let it be, let it be, let it be",
+    "Whisper words of wisdom, let it be",
+  ]);
+});
