@@ -4,9 +4,15 @@ import { LivrinhoFlags } from "~/app/(biblioteca)/musicas/_components/livrinho-f
 import { livrinhoFlagsByTitle, loadImportedLivrinho } from "~/lib/livrinho-import";
 import { api } from "~/trpc/server";
 
-export default async function SongsPage() {
+export default async function SongsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const query = q?.trim() ?? "";
   const [songs, viewer] = await Promise.all([
-    api.song.list(),
+    query ? api.song.search({ q: query }) : api.song.list(),
     api.auth.viewer(),
   ]);
   const flagsByTitle = viewer.isEditor
@@ -17,7 +23,11 @@ export default async function SongsPage() {
     <>
       <h1 className="mb-3 text-2xl font-semibold tracking-tight">Músicas</h1>
       {songs.length === 0 ? (
-        <p className="text-muted">Nenhuma música na Biblioteca ainda.</p>
+        <p className="text-muted">
+          {query
+            ? "Nenhuma música encontrada."
+            : "Nenhuma música na Biblioteca ainda."}
+        </p>
       ) : (
         <ul className="divide-y divide-line rounded-[10px] border border-line bg-paper">
           {songs.map((song) => {

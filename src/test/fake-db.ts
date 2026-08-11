@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import { songMatchesSearch } from "~/server/song-search";
+
 type UserRow = { id: string; isEditor: boolean };
 
 type ArtistRow = {
@@ -89,6 +91,30 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
   const db = {
     upsertUser(user: UserRow) {
       users.set(user.id, user);
+    },
+    searchSongs: async (q: string) => {
+      const hits = [...songs.values()].map((song) => {
+        const artist = song.artistId
+          ? (artists.get(song.artistId) ?? null)
+          : null;
+        const lyrics = [...chunks.values()]
+          .filter((chunk) => chunk.songId === song.id)
+          .map((chunk) => chunk.text)
+          .join("\n");
+        return { song, artist, lyrics };
+      });
+      return sortBy(
+        hits
+          .filter(({ song, artist, lyrics }) =>
+            songMatchesSearch(song.title, artist?.name ?? null, q, lyrics),
+          )
+          .map(({ song, artist }) => ({
+            id: song.id,
+            title: song.title,
+            artist: artist ? { id: artist.id, name: artist.name } : null,
+          })),
+        "title",
+      );
     },
     user: {
       findUnique: async ({

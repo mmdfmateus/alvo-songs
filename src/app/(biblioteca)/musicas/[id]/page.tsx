@@ -71,6 +71,7 @@ export default async function SongPage({
       <SongReadTabs
         cifraLines={cifraViewLines(song.cifra)}
         letra={song.letra}
+        videoId={song.videoId}
       />
     </>
   );
