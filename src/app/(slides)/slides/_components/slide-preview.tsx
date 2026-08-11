@@ -19,7 +19,7 @@ export function SlidePreview({ slides }: { slides: Slide[] }) {
   }
 
   return (
-    <ol className="grid gap-3 sm:grid-cols-2">
+    <ul className="grid list-none gap-3 sm:grid-cols-2">
       {slides.map((slide, index) => (
         <li
           key={`${slide.kind}-${index}`}
@@ -47,6 +47,6 @@ export function SlidePreview({ slides }: { slides: Slide[] }) {
           ) : null}
         </li>
       ))}
-    </ol>
+    </ul>
   );
 }
