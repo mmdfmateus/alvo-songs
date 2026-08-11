@@ -38,6 +38,7 @@ export function SongForm({ artists, song }: SongFormProps) {
   const [chunks, setChunks] = useState<ChunkDraft[]>(
     song?.chunks?.map((chunk) => ({ key: chunk.id, text: chunk.text })) ?? [],
   );
+  const [tab, setTab] = useState<"cifra" | "trechos">("cifra");
 
   function moveChunk(index: number, delta: -1 | 1) {
     const next = index + delta;
@@ -122,32 +123,64 @@ export function SongForm({ artists, song }: SongFormProps) {
           </select>
         </label>
       ) : null}
-      <label className="flex flex-col gap-1 text-sm font-medium">
-        Cifra
-        <textarea
-          required
-          value={cifraText}
-          onChange={(event) => setCifraText(event.target.value)}
-          rows={12}
-          spellCheck={false}
-          placeholder={"Am          C\nLetra na linha de baixo"}
-          className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 font-mono text-sm font-normal leading-relaxed"
-        />
-      </label>
-      <section className="rounded-[10px] border border-line bg-paper p-4">
-        <h2 className="mb-2 text-sm font-semibold">Prévia</h2>
-        {preview.ok ? (
-          <CifraView lines={preview.lines} />
-        ) : (
-          <p className="text-sm text-accent">
-            Não foi possível ler a Cifra. Cole no formato acordes acima da
-            letra.
-          </p>
-        )}
-      </section>
       {song ? (
+        <div
+          role="tablist"
+          aria-label="Edição da música"
+          className="inline-flex rounded-full bg-[#f0f0ec] p-0.5"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "cifra"}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+              tab === "cifra" ? "bg-ink text-white" : "text-muted"
+            }`}
+            onClick={() => setTab("cifra")}
+          >
+            Cifra
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "trechos"}
+            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+              tab === "trechos" ? "bg-ink text-white" : "text-muted"
+            }`}
+            onClick={() => setTab("trechos")}
+          >
+            Trechos
+          </button>
+        </div>
+      ) : null}
+      {!song || tab === "cifra" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Cifra
+            <textarea
+              required
+              value={cifraText}
+              onChange={(event) => setCifraText(event.target.value)}
+              rows={16}
+              spellCheck={false}
+              placeholder={"Am          C\nLetra na linha de baixo"}
+              className="min-h-[20rem] flex-1 rounded-lg border border-line bg-[#fafafa] px-3 py-2 font-mono text-sm font-normal leading-relaxed"
+            />
+          </label>
+          <section className="rounded-[10px] border border-line bg-paper p-4">
+            <h2 className="mb-2 text-sm font-semibold">Prévia</h2>
+            {preview.ok ? (
+              <CifraView lines={preview.lines} />
+            ) : (
+              <p className="text-sm text-accent">
+                Não foi possível ler a Cifra. Cole no formato acordes acima da
+                letra.
+              </p>
+            )}
+          </section>
+        </div>
+      ) : (
         <div className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold">Trechos</h2>
           {chunks.map((chunk, index) => (
             <div
               key={chunk.key}
@@ -207,7 +240,7 @@ export function SongForm({ artists, song }: SongFormProps) {
             Adicionar trecho
           </button>
         </div>
-      ) : null}
+      )}
       {error ? <p className="text-sm text-accent">{error}</p> : null}
       <div className="flex flex-wrap gap-2">
         <button
