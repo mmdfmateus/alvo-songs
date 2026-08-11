@@ -76,6 +76,37 @@ export function SongForm({ artists, song }: SongFormProps) {
   const error =
     create.error?.message ?? update.error?.message ?? remove.error?.message;
 
+  const editTabs = song ? (
+    <div
+      role="tablist"
+      aria-label="Edição da música"
+      className="inline-flex w-fit shrink-0 rounded-full bg-[#f0f0ec] p-0.5"
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "cifra"}
+        className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+          tab === "cifra" ? "bg-ink text-white" : "text-muted"
+        }`}
+        onClick={() => setTab("cifra")}
+      >
+        Cifra
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "trechos"}
+        className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+          tab === "trechos" ? "bg-ink text-white" : "text-muted"
+        }`}
+        onClick={() => setTab("trechos")}
+      >
+        Trechos
+      </button>
+    </div>
+  ) : null;
+
   return (
     <form
       className="flex flex-col gap-4"
@@ -123,36 +154,6 @@ export function SongForm({ artists, song }: SongFormProps) {
           </select>
         </label>
       ) : null}
-      {song ? (
-        <div
-          role="tablist"
-          aria-label="Edição da música"
-          className="inline-flex rounded-full bg-[#f0f0ec] p-0.5"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "cifra"}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-              tab === "cifra" ? "bg-ink text-white" : "text-muted"
-            }`}
-            onClick={() => setTab("cifra")}
-          >
-            Cifra
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "trechos"}
-            className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-              tab === "trechos" ? "bg-ink text-white" : "text-muted"
-            }`}
-            onClick={() => setTab("trechos")}
-          >
-            Trechos
-          </button>
-        </div>
-      ) : null}
       {!song || tab === "cifra" ? (
         <div className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm font-medium">
@@ -167,20 +168,26 @@ export function SongForm({ artists, song }: SongFormProps) {
               className="min-h-[20rem] flex-1 rounded-lg border border-line bg-[#fafafa] px-3 py-2 font-mono text-sm font-normal leading-relaxed"
             />
           </label>
-          <section className="rounded-[10px] border border-line bg-paper p-4">
-            <h2 className="mb-2 text-sm font-semibold">Prévia</h2>
-            {preview.ok ? (
-              <CifraView lines={preview.lines} />
-            ) : (
-              <p className="text-sm text-accent">
-                Não foi possível ler a Cifra. Cole no formato acordes acima da
-                letra.
-              </p>
-            )}
-          </section>
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">Prévia</p>
+              {editTabs}
+            </div>
+            <section className="rounded-[10px] border border-line bg-paper p-4">
+              {preview.ok ? (
+                <CifraView lines={preview.lines} />
+              ) : (
+                <p className="text-sm text-accent">
+                  Não foi possível ler a Cifra. Cole no formato acordes acima
+                  da letra.
+                </p>
+              )}
+            </section>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
+          <div className="flex justify-end">{editTabs}</div>
           {chunks.map((chunk, index) => (
             <div
               key={chunk.key}
