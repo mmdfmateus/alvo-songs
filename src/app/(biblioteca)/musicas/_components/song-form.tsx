@@ -237,6 +237,7 @@ export function SongForm({ artists, song }: SongFormProps) {
           </select>
         </label>
       ) : null}
+      {editTabs ? <div className="flex justify-end">{editTabs}</div> : null}
       {!song || tab === "cifra" ? (
         <div className="grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm font-medium">
@@ -252,10 +253,7 @@ export function SongForm({ artists, song }: SongFormProps) {
             />
           </label>
           <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-medium">Prévia</p>
-              {editTabs}
-            </div>
+            <p className="text-sm font-medium">Prévia</p>
             <section className="rounded-[10px] border border-line bg-paper p-4">
               {preview.ok ? (
                 <CifraView lines={preview.lines} />
@@ -270,7 +268,6 @@ export function SongForm({ artists, song }: SongFormProps) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="flex justify-end">{editTabs}</div>
           {chunks.map((chunk, index) => (
             <div
               key={chunk.key}
@@ -325,9 +322,11 @@ export function SongForm({ artists, song }: SongFormProps) {
                     type="button"
                     aria-label="Remover"
                     title="Remover"
-                    onClick={() =>
-                      setChunks(chunks.filter((_, i) => i !== index))
-                    }
+                    onClick={() => {
+                      if (window.confirm("Remover este Trecho?")) {
+                        setChunks(chunks.filter((_, i) => i !== index));
+                      }
+                    }}
                     className="rounded-md p-1.5 text-accent hover:bg-[#f0f0ec]"
                   >
                     <IconTrash className="size-4" />
