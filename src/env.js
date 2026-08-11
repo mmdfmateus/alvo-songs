@@ -19,6 +19,12 @@ export const env = createEnv({
     AUTH_GOOGLE_SECRET: requireAuthSecrets
       ? z.string()
       : z.string().optional(),
+    /**
+     * Stable Auth.js base URL used as OAuth redirect_uri for Preview deploys.
+     * Must be set on both Preview and Production (Auth.js proxy). Leave unset locally.
+     * @see https://authjs.dev/getting-started/deployment#securing-a-preview-deployment
+     */
+    AUTH_REDIRECT_PROXY_URL: z.string().url().optional(),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -42,6 +48,7 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
     AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
+    AUTH_REDIRECT_PROXY_URL: process.env.AUTH_REDIRECT_PROXY_URL,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
   },
