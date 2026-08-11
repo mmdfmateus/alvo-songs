@@ -10,6 +10,8 @@ import { api } from "~/trpc/react";
 
 type ArtistOption = { id: string; name: string };
 
+type ChunkDraft = { key: string; text: string };
+
 type SongFormProps = {
   artists: ArtistOption[];
   song?: {
@@ -18,8 +20,88 @@ type SongFormProps = {
     artist: { id: string } | null;
     cifra: unknown;
     cifraText?: string;
+    chunks?: { id: string; text: string }[];
   };
 };
+
+function newChunkKey() {
+  return crypto.randomUUID();
+}
+
+function IconArrowUp({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </svg>
+  );
+}
+
+function IconArrowDown({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </svg>
+  );
+}
+
+function IconTrash({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+function IconGrip({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <circle cx="9" cy="7" r="1.5" />
+      <circle cx="15" cy="7" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="17" r="1.5" />
+      <circle cx="15" cy="17" r="1.5" />
+    </svg>
+  );
+}
 
 export function SongForm({ artists, song }: SongFormProps) {
   const router = useRouter();
@@ -28,6 +110,36 @@ export function SongForm({ artists, song }: SongFormProps) {
   const [cifraText, setCifraText] = useState(
     song?.cifraText ?? (song ? cifraToCow(song.cifra) : ""),
   );
+  const [chunks, setChunks] = useState<ChunkDraft[]>(
+    song?.chunks?.map((chunk) => ({ key: chunk.id, text: chunk.text })) ?? [],
+  );
+  const [tab, setTab] = useState<"cifra" | "trechos">("cifra");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
+
+  function markDirty() {
+    setSaveState("idle");
+    if (update.isError) update.reset();
+  }
+
+  function moveChunk(index: number, delta: -1 | 1) {
+    const next = index + delta;
+    if (next < 0 || next >= chunks.length) return;
+    markDirty();
+    reorderChunk(index, next);
+  }
+
+  function reorderChunk(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || to >= chunks.length) return;
+    markDirty();
+    setChunks((prev) => {
+      const copy = [...prev];
+      const [item] = copy.splice(from, 1);
+      if (!item) return prev;
+      copy.splice(to, 0, item);
+      return copy;
+    });
+  }
 
   const preview = useMemo(() => {
     try {
@@ -45,7 +157,10 @@ export function SongForm({ artists, song }: SongFormProps) {
     onSuccess: (created) => router.push(`/musicas/${created.id}`),
   });
   const update = api.song.update.useMutation({
-    onSuccess: (updated) => router.push(`/musicas/${updated.id}`),
+    onSuccess: () => {
+      setSaveState("saved");
+      router.refresh();
+    },
   });
   const remove = api.song.delete.useMutation({
     onSuccess: () => router.push("/musicas"),
@@ -54,6 +169,45 @@ export function SongForm({ artists, song }: SongFormProps) {
   const pending = create.isPending || update.isPending || remove.isPending;
   const error =
     create.error?.message ?? update.error?.message ?? remove.error?.message;
+  const saveStatus =
+    song && update.isPending
+      ? "Salvando…"
+      : song && update.error
+        ? "Erro ao salvar"
+        : song && saveState === "saved"
+          ? "Salvo"
+          : null;
+
+  const editTabs = song ? (
+    <div
+      role="tablist"
+      aria-label="Edição da música"
+      className="inline-flex w-fit shrink-0 rounded-full bg-[#f0f0ec] p-0.5"
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "cifra"}
+        className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+          tab === "cifra" ? "bg-ink text-white" : "text-muted"
+        }`}
+        onClick={() => setTab("cifra")}
+      >
+        Cifra
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "trechos"}
+        className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+          tab === "trechos" ? "bg-ink text-white" : "text-muted"
+        }`}
+        onClick={() => setTab("trechos")}
+      >
+        Trechos
+      </button>
+    </div>
+  ) : null;
 
   return (
     <form
@@ -66,18 +220,42 @@ export function SongForm({ artists, song }: SongFormProps) {
           artistId: artistId || undefined,
         };
         if (song) {
-          update.mutate({ id: song.id, ...payload });
+          update.mutate({
+            id: song.id,
+            ...payload,
+            chunks: chunks.map(({ text }) => ({ text })),
+          });
         } else {
           create.mutate(payload);
         }
       }}
     >
+      {song ? (
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Editar música
+          </h1>
+          {saveStatus ? (
+            <p
+              className={`text-sm ${
+                update.error && !update.isPending ? "text-accent" : "text-muted"
+              }`}
+              aria-live="polite"
+            >
+              {saveStatus}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <label className="flex max-w-md flex-col gap-1 text-sm font-medium">
         Título
         <input
           required
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            markDirty();
+            setTitle(event.target.value);
+          }}
           className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
         />
       </label>
@@ -86,7 +264,10 @@ export function SongForm({ artists, song }: SongFormProps) {
           Artista (opcional)
           <select
             value={artistId}
-            onChange={(event) => setArtistId(event.target.value)}
+            onChange={(event) => {
+              markDirty();
+              setArtistId(event.target.value);
+            }}
             className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
           >
             <option value="">Sem artista</option>
@@ -98,29 +279,133 @@ export function SongForm({ artists, song }: SongFormProps) {
           </select>
         </label>
       ) : null}
-      <label className="flex flex-col gap-1 text-sm font-medium">
-        Cifra
-        <textarea
-          required
-          value={cifraText}
-          onChange={(event) => setCifraText(event.target.value)}
-          rows={12}
-          spellCheck={false}
-          placeholder={"Am          C\nLetra na linha de baixo"}
-          className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 font-mono text-sm font-normal leading-relaxed"
-        />
-      </label>
-      <section className="rounded-[10px] border border-line bg-paper p-4">
-        <h2 className="mb-2 text-sm font-semibold">Prévia</h2>
-        {preview.ok ? (
-          <CifraView lines={preview.lines} />
-        ) : (
-          <p className="text-sm text-accent">
-            Não foi possível ler a Cifra. Cole no formato acordes acima da
-            letra.
-          </p>
-        )}
-      </section>
+      {editTabs ? <div className="flex justify-end">{editTabs}</div> : null}
+      {!song || tab === "cifra" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            Cifra
+            <textarea
+              required
+              value={cifraText}
+              onChange={(event) => {
+                markDirty();
+                setCifraText(event.target.value);
+              }}
+              rows={16}
+              spellCheck={false}
+              placeholder={"Am          C\nLetra na linha de baixo"}
+              className="min-h-[20rem] flex-1 rounded-lg border border-line bg-[#fafafa] px-3 py-2 font-mono text-sm font-normal leading-relaxed"
+            />
+          </label>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium">Prévia</p>
+            <section className="rounded-[10px] border border-line bg-paper p-4">
+              {preview.ok ? (
+                <CifraView lines={preview.lines} />
+              ) : (
+                <p className="text-sm text-accent">
+                  Não foi possível ler a Cifra. Cole no formato acordes acima
+                  da letra.
+                </p>
+              )}
+            </section>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {chunks.map((chunk, index) => (
+            <div
+              key={chunk.key}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (dragIndex === null || dragIndex === index) return;
+                reorderChunk(dragIndex, index);
+                setDragIndex(index);
+              }}
+              className={`flex flex-col gap-2 rounded-[10px] border border-line bg-paper p-4 ${
+                dragIndex === index ? "opacity-60" : ""
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  draggable
+                  aria-label="Arrastar trecho"
+                  title="Arrastar"
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", String(index));
+                    setDragIndex(index);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  className="cursor-grab touch-none text-muted hover:text-ink active:cursor-grabbing"
+                >
+                  <IconGrip className="size-4" />
+                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    aria-label="Subir"
+                    title="Subir"
+                    onClick={() => moveChunk(index, -1)}
+                    disabled={index === 0}
+                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
+                  >
+                    <IconArrowUp className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Descer"
+                    title="Descer"
+                    onClick={() => moveChunk(index, 1)}
+                    disabled={index === chunks.length - 1}
+                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
+                  >
+                    <IconArrowDown className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Remover"
+                    title="Remover"
+                    onClick={() => {
+                      if (window.confirm("Remover este Trecho?")) {
+                        markDirty();
+                        setChunks(chunks.filter((_, i) => i !== index));
+                      }
+                    }}
+                    className="rounded-md p-1.5 text-accent hover:bg-[#f0f0ec]"
+                  >
+                    <IconTrash className="size-4" />
+                  </button>
+                </div>
+              </div>
+              <textarea
+                value={chunk.text}
+                onChange={(event) => {
+                  markDirty();
+                  const copy = [...chunks];
+                  const current = copy[index];
+                  if (!current) return;
+                  copy[index] = { ...current, text: event.target.value };
+                  setChunks(copy);
+                }}
+                rows={4}
+                className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal leading-relaxed"
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              markDirty();
+              setChunks([...chunks, { key: newChunkKey(), text: "" }]);
+            }}
+            className="self-start rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-[#fafafa]"
+          >
+            Adicionar trecho
+          </button>
+        </div>
+      )}
       {error ? <p className="text-sm text-accent">{error}</p> : null}
       <div className="flex flex-wrap gap-2">
         <button

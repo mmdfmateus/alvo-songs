@@ -86,7 +86,7 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
     return false;
   }
 
-  return {
+  const db = {
     upsertUser(user: UserRow) {
       users.set(user.id, user);
     },
@@ -292,6 +292,32 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
           [...chunks.values()].filter((chunk) => chunk.songId === where.songId),
           "position",
         ),
+      deleteMany: async ({ where }: { where: { songId: string } }) => {
+        let count = 0;
+        for (const [id, chunk] of chunks) {
+          if (chunk.songId === where.songId) {
+            chunks.delete(id);
+            count += 1;
+          }
+        }
+        return { count };
+      },
+      createMany: async ({
+        data,
+      }: {
+        data: { songId: string; position: number; text: string }[];
+      }) => {
+        for (const chunk of data) {
+          const row: ChunkRow = {
+            id: randomUUID(),
+            songId: chunk.songId,
+            position: chunk.position,
+            text: chunk.text,
+          };
+          chunks.set(row.id, row);
+        }
+        return { count: data.length };
+      },
     },
     program: {
       findUnique: async ({
@@ -424,6 +450,49 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
         }
         return { count: data.length };
       },
+    },
+  };
+
+  return {
+    ...db,
+    $transaction: async <T>(fn: (tx: typeof db) => Promise<T>): Promise<T> => {
+      const snapshot = {
+        users: new Map(
+          [...users.entries()].map(([id, row]) => [id, { ...row }]),
+        ),
+        artists: new Map(
+          [...artists.entries()].map(([id, row]) => [id, { ...row }]),
+        ),
+        songs: new Map(
+          [...songs.entries()].map(([id, row]) => [id, { ...row }]),
+        ),
+        chunks: new Map(
+          [...chunks.entries()].map(([id, row]) => [id, { ...row }]),
+        ),
+        programs: new Map(
+          [...programs.entries()].map(([id, row]) => [id, { ...row }]),
+        ),
+        sections: new Map(
+          [...sections.entries()].map(([id, row]) => [id, { ...row }]),
+        ),
+      };
+      try {
+        return await fn(db);
+      } catch (error) {
+        users.clear();
+        artists.clear();
+        songs.clear();
+        chunks.clear();
+        programs.clear();
+        sections.clear();
+        for (const [id, row] of snapshot.users) users.set(id, row);
+        for (const [id, row] of snapshot.artists) artists.set(id, row);
+        for (const [id, row] of snapshot.songs) songs.set(id, row);
+        for (const [id, row] of snapshot.chunks) chunks.set(id, row);
+        for (const [id, row] of snapshot.programs) programs.set(id, row);
+        for (const [id, row] of snapshot.sections) sections.set(id, row);
+        throw error;
+      }
     },
   };
 }
