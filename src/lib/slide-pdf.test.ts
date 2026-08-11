@@ -116,6 +116,15 @@ test("lyric page includes the Trecho and does not repeat the song title", async 
   expect(pages[1]?.text).not.toContain("Grande É o Senhor");
 });
 
+test("lyric page keeps a long Trecho instead of dropping it", async () => {
+  const text =
+    "Grande é o Senhor e mui digno de louvor na cidade do nosso Deus no monte da sua santidade";
+  const { pages } = await renderSlides([{ kind: "lyric", text }]);
+
+  expect(pages[0]?.text).toContain("Grande é o Senhor");
+  expect(pages[0]?.text).toContain("monte da sua santidade");
+});
+
 test("blank page has no Recados or song title", async () => {
   const { pages } = await renderSlides([
     { kind: "titleChip", title: "Recados" },

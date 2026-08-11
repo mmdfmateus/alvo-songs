@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   lyric: {
+    width: "100%",
     fontSize: 28,
     fontFamily: "Helvetica",
     color: "#ffffff",

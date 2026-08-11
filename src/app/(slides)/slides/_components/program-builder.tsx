@@ -179,7 +179,7 @@ function useLivePreviewSlides(
     songIds.map((id, index) => [id, songQueries[index]]),
   );
 
-  return expandSections(
+  const slides = expandSections(
     sections.map((section) => {
       if (section.type === "song") {
         const query = section.songId ? queryById.get(section.songId) : undefined;
@@ -201,6 +201,11 @@ function useLivePreviewSlides(
       return { type: section.type, payload: section.payload };
     }),
   );
+  const songsFetched = songIds.every(
+    (id) => queryById.get(id)?.isFetched === true,
+  );
+
+  return { slides, songsFetched };
 }
 
 export function ProgramBuilder({
@@ -220,7 +225,10 @@ export function ProgramBuilder({
     sectionsFromProgram(program.sections),
   );
   const library = api.song.list.useQuery();
-  const slides = useLivePreviewSlides(sections, library.data ?? []);
+  const { slides, songsFetched } = useLivePreviewSlides(
+    sections,
+    library.data ?? [],
+  );
 
   const update = api.program.update.useMutation({
     onSuccess: (saved) => {
@@ -463,7 +471,11 @@ export function ProgramBuilder({
 
       <section>
         <h2 className="mb-3 text-sm font-semibold">Prévia</h2>
-        <ExportPdfButton slides={slides} programName={name} />
+        <ExportPdfButton
+          slides={slides}
+          programName={name}
+          disabled={!songsFetched}
+        />
         <SlidePreview slides={slides} />
       </section>
     </div>

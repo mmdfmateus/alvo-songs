@@ -15,9 +15,11 @@ function pdfFilename(programName: string): string {
 export function ExportPdfButton({
   slides,
   programName,
+  disabled = false,
 }: {
   slides: Slide[];
   programName: string;
+  disabled?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function ExportPdfButton({
     <div className="mb-6 flex max-w-xl flex-col gap-2">
       <button
         type="button"
-        disabled={busy || slides.length === 0}
+        disabled={busy || disabled || slides.length === 0}
         onClick={() => void exportPdf()}
         className="self-start rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
