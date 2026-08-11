@@ -115,15 +115,23 @@ export function SongForm({ artists, song }: SongFormProps) {
   );
   const [tab, setTab] = useState<"cifra" | "trechos">("cifra");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
+
+  function markDirty() {
+    setSaveState("idle");
+    if (update.isError) update.reset();
+  }
 
   function moveChunk(index: number, delta: -1 | 1) {
     const next = index + delta;
     if (next < 0 || next >= chunks.length) return;
+    markDirty();
     reorderChunk(index, next);
   }
 
   function reorderChunk(from: number, to: number) {
     if (from === to || from < 0 || to < 0 || to >= chunks.length) return;
+    markDirty();
     setChunks((prev) => {
       const copy = [...prev];
       const [item] = copy.splice(from, 1);
@@ -149,7 +157,10 @@ export function SongForm({ artists, song }: SongFormProps) {
     onSuccess: (created) => router.push(`/musicas/${created.id}`),
   });
   const update = api.song.update.useMutation({
-    onSuccess: (updated) => router.push(`/musicas/${updated.id}`),
+    onSuccess: () => {
+      setSaveState("saved");
+      router.refresh();
+    },
   });
   const remove = api.song.delete.useMutation({
     onSuccess: () => router.push("/musicas"),
@@ -158,6 +169,14 @@ export function SongForm({ artists, song }: SongFormProps) {
   const pending = create.isPending || update.isPending || remove.isPending;
   const error =
     create.error?.message ?? update.error?.message ?? remove.error?.message;
+  const saveStatus =
+    song && update.isPending
+      ? "Salvando…"
+      : song && update.error
+        ? "Erro ao salvar"
+        : song && saveState === "saved"
+          ? "Salvo"
+          : null;
 
   const editTabs = song ? (
     <div
@@ -211,12 +230,32 @@ export function SongForm({ artists, song }: SongFormProps) {
         }
       }}
     >
+      {song ? (
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Editar música
+          </h1>
+          {saveStatus ? (
+            <p
+              className={`text-sm ${
+                update.error && !update.isPending ? "text-accent" : "text-muted"
+              }`}
+              aria-live="polite"
+            >
+              {saveStatus}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <label className="flex max-w-md flex-col gap-1 text-sm font-medium">
         Título
         <input
           required
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            markDirty();
+            setTitle(event.target.value);
+          }}
           className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
         />
       </label>
@@ -225,7 +264,10 @@ export function SongForm({ artists, song }: SongFormProps) {
           Artista (opcional)
           <select
             value={artistId}
-            onChange={(event) => setArtistId(event.target.value)}
+            onChange={(event) => {
+              markDirty();
+              setArtistId(event.target.value);
+            }}
             className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
           >
             <option value="">Sem artista</option>
@@ -245,7 +287,10 @@ export function SongForm({ artists, song }: SongFormProps) {
             <textarea
               required
               value={cifraText}
-              onChange={(event) => setCifraText(event.target.value)}
+              onChange={(event) => {
+                markDirty();
+                setCifraText(event.target.value);
+              }}
               rows={16}
               spellCheck={false}
               placeholder={"Am          C\nLetra na linha de baixo"}
@@ -324,6 +369,7 @@ export function SongForm({ artists, song }: SongFormProps) {
                     title="Remover"
                     onClick={() => {
                       if (window.confirm("Remover este Trecho?")) {
+                        markDirty();
                         setChunks(chunks.filter((_, i) => i !== index));
                       }
                     }}
@@ -336,6 +382,7 @@ export function SongForm({ artists, song }: SongFormProps) {
               <textarea
                 value={chunk.text}
                 onChange={(event) => {
+                  markDirty();
                   const copy = [...chunks];
                   const current = copy[index];
                   if (!current) return;
@@ -349,9 +396,10 @@ export function SongForm({ artists, song }: SongFormProps) {
           ))}
           <button
             type="button"
-            onClick={() =>
-              setChunks([...chunks, { key: newChunkKey(), text: "" }])
-            }
+            onClick={() => {
+              markDirty();
+              setChunks([...chunks, { key: newChunkKey(), text: "" }]);
+            }}
             className="self-start rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-[#fafafa]"
           >
             Adicionar trecho
