@@ -28,6 +28,81 @@ function newChunkKey() {
   return crypto.randomUUID();
 }
 
+function IconArrowUp({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </svg>
+  );
+}
+
+function IconArrowDown({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </svg>
+  );
+}
+
+function IconTrash({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+function IconGrip({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <circle cx="9" cy="7" r="1.5" />
+      <circle cx="15" cy="7" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" />
+      <circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="17" r="1.5" />
+      <circle cx="15" cy="17" r="1.5" />
+    </svg>
+  );
+}
+
 export function SongForm({ artists, song }: SongFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState(song?.title ?? "");
@@ -39,15 +114,23 @@ export function SongForm({ artists, song }: SongFormProps) {
     song?.chunks?.map((chunk) => ({ key: chunk.id, text: chunk.text })) ?? [],
   );
   const [tab, setTab] = useState<"cifra" | "trechos">("cifra");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   function moveChunk(index: number, delta: -1 | 1) {
     const next = index + delta;
     if (next < 0 || next >= chunks.length) return;
-    const copy = [...chunks];
-    const [item] = copy.splice(index, 1);
-    if (!item) return;
-    copy.splice(next, 0, item);
-    setChunks(copy);
+    reorderChunk(index, next);
+  }
+
+  function reorderChunk(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || to >= chunks.length) return;
+    setChunks((prev) => {
+      const copy = [...prev];
+      const [item] = copy.splice(from, 1);
+      if (!item) return prev;
+      copy.splice(to, 0, item);
+      return copy;
+    });
   }
 
   const preview = useMemo(() => {
@@ -191,35 +274,63 @@ export function SongForm({ artists, song }: SongFormProps) {
           {chunks.map((chunk, index) => (
             <div
               key={chunk.key}
-              className="flex flex-col gap-2 rounded-[10px] border border-line bg-paper p-4"
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (dragIndex === null || dragIndex === index) return;
+                reorderChunk(dragIndex, index);
+                setDragIndex(index);
+              }}
+              className={`flex flex-col gap-2 rounded-[10px] border border-line bg-paper p-4 ${
+                dragIndex === index ? "opacity-60" : ""
+              }`}
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold">Trecho</p>
-                <div className="flex gap-2 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  draggable
+                  aria-label="Arrastar trecho"
+                  title="Arrastar"
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", String(index));
+                    setDragIndex(index);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  className="cursor-grab touch-none text-muted hover:text-ink active:cursor-grabbing"
+                >
+                  <IconGrip className="size-4" />
+                </button>
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
+                    aria-label="Subir"
+                    title="Subir"
                     onClick={() => moveChunk(index, -1)}
                     disabled={index === 0}
-                    className="text-muted hover:text-ink disabled:opacity-40"
+                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
-                    Subir
+                    <IconArrowUp className="size-4" />
                   </button>
                   <button
                     type="button"
+                    aria-label="Descer"
+                    title="Descer"
                     onClick={() => moveChunk(index, 1)}
                     disabled={index === chunks.length - 1}
-                    className="text-muted hover:text-ink disabled:opacity-40"
+                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
-                    Descer
+                    <IconArrowDown className="size-4" />
                   </button>
                   <button
                     type="button"
+                    aria-label="Remover"
+                    title="Remover"
                     onClick={() =>
                       setChunks(chunks.filter((_, i) => i !== index))
                     }
-                    className="font-semibold text-accent"
+                    className="rounded-md p-1.5 text-accent hover:bg-[#f0f0ec]"
                   >
-                    Remover
+                    <IconTrash className="size-4" />
                   </button>
                 </div>
               </div>
