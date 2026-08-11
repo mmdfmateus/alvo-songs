@@ -28,10 +28,12 @@ export function songMatchesSearch(
   title: string,
   artistName: string | null | undefined,
   q: string,
+  lyrics?: string,
 ) {
   return (
     tokensMatchField(title, q) ||
-    Boolean(artistName && tokensMatchField(artistName, q))
+    Boolean(artistName && tokensMatchField(artistName, q)) ||
+    Boolean(lyrics && tokensMatchField(lyrics, q))
   );
 }
 
@@ -72,11 +74,30 @@ export async function searchSongs(
         AND to_tsvector('portuguese', immutable_unaccent(a.name::text))
           @@ plainto_tsquery('portuguese', immutable_unaccent(${q}))
       )
+      OR EXISTS (
+        SELECT 1
+        FROM "LyricChunk" c
+        WHERE
+          c."songId" = s.id
+          AND to_tsvector('portuguese', immutable_unaccent(c.text))
+            @@ plainto_tsquery('portuguese', immutable_unaccent(${q}))
+      )
     ORDER BY
       ts_rank_cd(
         to_tsvector('portuguese', immutable_unaccent(s.title))
           || coalesce(
             to_tsvector('portuguese', immutable_unaccent(a.name::text)),
+            ''::tsvector
+          )
+          || coalesce(
+            (
+              SELECT to_tsvector(
+                'portuguese',
+                immutable_unaccent(string_agg(c.text, ' '))
+              )
+              FROM "LyricChunk" c
+              WHERE c."songId" = s.id
+            ),
             ''::tsvector
           ),
         plainto_tsquery('portuguese', immutable_unaccent(${q}))

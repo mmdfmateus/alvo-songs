@@ -18,5 +18,6 @@ test("Postgres search uses portuguese tsvector/tsquery, not ILIKE", async () => 
   expect(sql).toContain("plainto_tsquery");
   expect(sql).toContain("portuguese");
   expect(sql).toContain("immutable_unaccent");
+  expect(sql).toContain("LyricChunk");
   expect(sql).not.toMatch(/ILIKE|contains/i);
 });

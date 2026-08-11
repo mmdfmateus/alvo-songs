@@ -97,12 +97,16 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
         const artist = song.artistId
           ? (artists.get(song.artistId) ?? null)
           : null;
-        return { song, artist };
+        const lyrics = [...chunks.values()]
+          .filter((chunk) => chunk.songId === song.id)
+          .map((chunk) => chunk.text)
+          .join("\n");
+        return { song, artist, lyrics };
       });
       return sortBy(
         hits
-          .filter(({ song, artist }) =>
-            songMatchesSearch(song.title, artist?.name ?? null, q),
+          .filter(({ song, artist, lyrics }) =>
+            songMatchesSearch(song.title, artist?.name ?? null, q, lyrics),
           )
           .map(({ song, artist }) => ({
             id: song.id,

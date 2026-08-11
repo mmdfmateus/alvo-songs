@@ -195,6 +195,23 @@ test("search is accent-insensitive on title and Artist name", async () => {
   ]);
 });
 
+test("search matches Songs by Trecho text", async () => {
+  const { db } = testCaller({ isEditor: true });
+  const editor = testCaller({ db, isEditor: true }).caller;
+  await editor.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  await editor.song.create({
+    title: "Abre os Céus",
+    cifraText: "Yeah, abre os céus\nNa terra como no céu",
+  });
+
+  const anonymous = testCaller({ db, signedIn: false }).caller;
+  const results = await anonymous.song.search({ q: "whisper words" });
+  expect(results.map((song) => song.title)).toEqual(["Let It Be"]);
+});
+
 test("search is case-insensitive", async () => {
   const { db } = testCaller({ isEditor: true });
   const editor = testCaller({ db, isEditor: true }).caller;
