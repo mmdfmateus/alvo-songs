@@ -1,11 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
 import { cifraToCow, parseCifra } from "~/lib/cifra-parse";
 import { cifraViewLines } from "~/lib/cifra";
+import {
+  createSongAutosave,
+  type SongAutosaveStatus,
+} from "~/lib/song-autosave";
 import { api } from "~/trpc/react";
 
 type ArtistOption = { id: string; name: string };
@@ -135,10 +139,15 @@ export function SongForm({ artists, song }: SongFormProps) {
   );
   const [tab, setTab] = useState<"cifra" | "trechos">("cifra");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [saveState, setSaveState] = useState<"idle" | "saved">("idle");
+  const [dirty, setDirty] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] =
+    useState<SongAutosaveStatus>("idle");
+  const autosaveRef = useRef<ReturnType<typeof createSongAutosave> | null>(
+    null,
+  );
 
   function markDirty() {
-    setSaveState("idle");
+    setDirty(true);
     if (update.isError) update.reset();
   }
 
@@ -176,25 +185,62 @@ export function SongForm({ artists, song }: SongFormProps) {
   const create = api.song.create.useMutation({
     onSuccess: (created) => router.push(`/musicas/${created.id}`),
   });
-  const update = api.song.update.useMutation({
-    onSuccess: () => {
-      setSaveState("saved");
-      router.refresh();
-    },
-  });
+  const update = api.song.update.useMutation();
   const remove = api.song.delete.useMutation({
     onSuccess: () => router.push("/musicas"),
   });
+  const mutateUpdateRef = useRef(update.mutateAsync);
+  mutateUpdateRef.current = update.mutateAsync;
+  const refreshRef = useRef(() => router.refresh());
+  refreshRef.current = () => router.refresh();
+  const songId = song?.id;
+
+  useEffect(() => {
+    if (!songId) return;
+    const autosave = createSongAutosave({
+      save: async (draft) => {
+        await mutateUpdateRef.current({
+          id: songId,
+          title: draft.title,
+          cifraText: draft.cifraText,
+          artistId: draft.artistId,
+          videoId: draft.videoId,
+          chunks: draft.chunks,
+        });
+        refreshRef.current();
+      },
+      onStatus: setAutosaveStatus,
+    });
+    autosaveRef.current = autosave;
+    return () => {
+      autosave.dispose();
+      autosaveRef.current = null;
+    };
+  }, [songId]);
+
+  useEffect(() => {
+    if (!songId || !dirty) return;
+    autosaveRef.current?.notify({
+      title,
+      cifraText,
+      artistId: artistId || undefined,
+      videoId: parseYoutubeVideoId(videoId) || undefined,
+      chunks: chunks.map(({ text }) => ({ text })),
+      cifraOk: preview.ok,
+    });
+  }, [songId, dirty, title, cifraText, artistId, videoId, chunks, preview.ok]);
 
   const pending = create.isPending || update.isPending || remove.isPending;
   const error =
-    create.error?.message ?? update.error?.message ?? remove.error?.message;
+    create.error?.message ??
+    (autosaveStatus === "error" ? update.error?.message : undefined) ??
+    remove.error?.message;
   const saveStatus =
-    song && update.isPending
+    song && autosaveStatus === "saving"
       ? "Salvando…"
-      : song && update.error
+      : song && autosaveStatus === "error"
         ? "Erro ao salvar"
-        : song && saveState === "saved"
+        : song && autosaveStatus === "saved"
           ? "Salvo"
           : null;
 
@@ -241,11 +287,12 @@ export function SongForm({ artists, song }: SongFormProps) {
           videoId: parseYoutubeVideoId(videoId) || undefined,
         };
         if (song) {
-          update.mutate({
-            id: song.id,
+          autosaveRef.current?.notify({
             ...payload,
             chunks: chunks.map(({ text }) => ({ text })),
+            cifraOk: preview.ok,
           });
+          autosaveRef.current?.flush();
         } else {
           create.mutate(payload);
         }
@@ -259,7 +306,7 @@ export function SongForm({ artists, song }: SongFormProps) {
           {saveStatus ? (
             <p
               className={`text-sm ${
-                update.error && !update.isPending ? "text-accent" : "text-muted"
+                autosaveStatus === "error" ? "text-accent" : "text-muted"
               }`}
               aria-live="polite"
             >
