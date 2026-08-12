@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Presentation } from "lucide-react";
 
+import { Button } from "~/components/ui/button";
 import { addMyProgram, readMyPrograms, type MyProgram } from "~/lib/my-programs";
 import { DEFAULT_COMMUNITY_NAME } from "~/lib/slides";
 import { saveOwnerTokenToDocument } from "~/lib/program-owners-cookie";
@@ -50,20 +52,17 @@ export function MeusSlides() {
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Culto 09/08"
+            placeholder="Programa 09/08"
             className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
           />
         </label>
         {create.error ? (
           <p className="text-sm text-accent">{create.error.message}</p>
         ) : null}
-        <button
-          type="submit"
-          disabled={create.isPending}
-          className="self-start rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
+        <Button type="submit" disabled={create.isPending} className="self-start">
+          <Presentation data-icon="inline-start" />
           Criar slides
-        </button>
+        </Button>
       </form>
 
       {items.length === 0 ? (
