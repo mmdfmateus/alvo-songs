@@ -14,6 +14,7 @@ import {
 } from "~/app/_components/biblioteca-subnav";
 import { signOutAction } from "~/app/_components/sign-out-action";
 import { SongSearch } from "~/app/_components/song-search";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button, buttonVariants } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -38,19 +39,29 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
+import { userInitials } from "~/lib/user-display";
 import { cn } from "~/lib/utils";
+
+type HeaderUser = {
+  name: string | null;
+  image: string | null;
+};
 
 export function SiteHeaderNav({
   mode,
   signedIn,
   isEditor,
+  user,
 }: {
   mode: "biblioteca" | "slides";
   signedIn: boolean;
   isEditor: boolean;
+  user: HeaderUser | null;
 }) {
   const pathname = usePathname();
-  const browseLinks =
+  const desktopBrowseLinks =
+    mode === "biblioteca" ? bibliotecaBrowseLinks : [];
+  const mobileBrowseLinks =
     mode === "biblioteca"
       ? isEditor
         ? [...bibliotecaBrowseLinks, bibliotecaReviewLink]
@@ -58,124 +69,128 @@ export function SiteHeaderNav({
       : [];
   const createLinks =
     mode === "biblioteca" && isEditor ? bibliotecaCreateLinks : [];
-  const allHrefs = [...browseLinks, ...createLinks].map((link) => link.href);
+  const showReview = mode === "biblioteca" && isEditor;
+  const activeHrefs = [
+    ...desktopBrowseLinks,
+    ...(showReview ? [bibliotecaReviewLink] : []),
+    ...createLinks,
+  ].map((link) => link.href);
 
   return (
     <header className="sticky top-0 z-10 border-b-[3px] border-accent bg-paper/95 backdrop-blur-sm">
-      <div className="flex items-center gap-2 px-4 py-2.5 md:gap-3 md:px-5">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center gap-2 font-bold tracking-tight no-underline"
-        >
-          <span className="grid size-7 place-items-center rounded-md bg-accent text-xs font-bold text-accent-foreground">
-            A
-          </span>
-          <span className="hidden sm:inline">Alvo Cifras</span>
-        </Link>
-
-        {browseLinks.length > 0 ? (
-          <NavigationMenu
-            className="hidden flex-none md:flex"
-            aria-label="Biblioteca"
+      <div className="flex items-center gap-2 px-4 py-2.5 md:grid md:grid-cols-[1fr_min(32rem,100%)_1fr] md:items-center md:gap-4 md:px-5">
+        <div className="flex min-w-0 items-center gap-2 md:gap-3">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-2 font-bold tracking-tight no-underline"
           >
-            <NavigationMenuList>
-              {browseLinks.map((link) => (
-                <DesktopNavLink
-                  key={link.href}
-                  link={link}
-                  active={isNavActive(pathname, link.href, allHrefs)}
-                />
-              ))}
-            </NavigationMenuList>
-          </NavigationMenu>
-        ) : null}
+            <span className="grid size-7 place-items-center rounded-md bg-accent text-xs font-bold text-accent-foreground">
+              A
+            </span>
+            <span className="hidden sm:inline">Alvo Cifras</span>
+          </Link>
 
-        {createLinks.length > 0 ? (
-          <div className="hidden md:block">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="sm" aria-label="Criar" />
-                }
-              >
-                <PlusIcon data-icon="inline-start" />
-                Novo
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuGroup>
-                  {createLinks.map((link) => (
-                    <DropdownMenuItem
-                      key={link.href}
-                      nativeButton={false}
-                      render={<Link href={link.href} />}
-                    >
-                      {link.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {desktopBrowseLinks.length > 0 ? (
+            <NavigationMenu
+              className="hidden flex-none md:flex"
+              aria-label="Biblioteca"
+            >
+              <NavigationMenuList>
+                {desktopBrowseLinks.map((link) => (
+                  <DesktopNavLink
+                    key={link.href}
+                    link={link}
+                    active={isNavActive(pathname, link.href, activeHrefs)}
+                  />
+                ))}
+              </NavigationMenuList>
+            </NavigationMenu>
+          ) : null}
+        </div>
+
+        <SongSearch className="min-w-0 flex-1 md:col-start-2 md:w-full md:flex-none md:justify-self-center" />
+
+        <div className="flex shrink-0 items-center gap-1 md:justify-self-end md:gap-2">
+          <div className="hidden items-center gap-1 md:flex">
+            <ModeSwitch mode={mode} />
+            {createLinks.length > 0 ? (
+              <NovoMenu createLinks={createLinks} />
+            ) : null}
+            {showReview ? (
+              <ReviewLink active={isNavActive(pathname, bibliotecaReviewLink.href, activeHrefs)} />
+            ) : null}
+            <UserMenu signedIn={signedIn} user={user} />
           </div>
-        ) : null}
 
-        <SongSearch className="min-w-0 flex-1 md:max-w-md lg:max-w-xl" />
+          <Sheet>
+            <SheetTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden"
+                  aria-label="Abrir menu"
+                />
+              }
+            >
+              <MenuIcon />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader>
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 px-4 pb-4">
+                {signedIn && user ? (
+                  <div className="flex items-center gap-3">
+                    <UserAvatar user={user} size="lg" />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">
+                        {user.name ?? "Conta"}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
-        <ModeSwitch mode={mode} className="hidden md:inline-flex" />
+                <ModeSwitch mode={mode} className="w-full" inSheet />
 
-        <AuthControl signedIn={signedIn} className="hidden md:inline-flex" />
-
-        <Sheet>
-          <SheetTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                aria-label="Abrir menu"
-              />
-            }
-          >
-            <MenuIcon />
-          </SheetTrigger>
-          <SheetContent side="right" className="w-72">
-            <SheetHeader>
-              <SheetTitle>Menu</SheetTitle>
-            </SheetHeader>
-            <div className="flex flex-col gap-4 px-4 pb-4">
-              <ModeSwitch mode={mode} className="w-full" inSheet />
-
-              {browseLinks.length > 0 ? (
-                <nav aria-label="Biblioteca" className="flex flex-col gap-1">
-                  {browseLinks.map((link) => (
-                    <MobileNavLink
-                      key={link.href}
-                      link={link}
-                      active={isNavActive(pathname, link.href, allHrefs)}
-                    />
-                  ))}
-                </nav>
-              ) : null}
-
-              {createLinks.length > 0 ? (
-                <>
-                  <Separator />
-                  <nav aria-label="Criar" className="flex flex-col gap-1">
-                    {createLinks.map((link) => (
+                {mobileBrowseLinks.length > 0 ? (
+                  <nav aria-label="Biblioteca" className="flex flex-col gap-1">
+                    {mobileBrowseLinks.map((link) => (
                       <MobileNavLink
                         key={link.href}
                         link={link}
-                        active={isNavActive(pathname, link.href, allHrefs)}
+                        active={isNavActive(pathname, link.href, activeHrefs)}
                       />
                     ))}
                   </nav>
-                </>
-              ) : null}
+                ) : null}
 
-              <Separator />
-              <AuthControl signedIn={signedIn} className="w-full" />
-            </div>
-          </SheetContent>
-        </Sheet>
+                {createLinks.length > 0 ? (
+                  <>
+                    <Separator />
+                    <nav aria-label="Criar" className="flex flex-col gap-1">
+                      {createLinks.map((link) => (
+                        <MobileNavLink
+                          key={link.href}
+                          link={link}
+                          active={isNavActive(pathname, link.href, activeHrefs)}
+                        />
+                      ))}
+                    </nav>
+                  </>
+                ) : null}
+
+                <Separator />
+                <UserMenu
+                  signedIn={signedIn}
+                  user={user}
+                  className="w-full"
+                  variant="mobile"
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );
@@ -201,6 +216,137 @@ function DesktopNavLink({
         {link.label}
       </NavigationMenuLink>
     </NavigationMenuItem>
+  );
+}
+
+function ReviewLink({ active }: { active: boolean }) {
+  return (
+    <Link
+      href={bibliotecaReviewLink.href}
+      className={cn(
+        buttonVariants({
+          variant: active ? "secondary" : "ghost",
+          size: "sm",
+        }),
+        "no-underline",
+      )}
+      aria-current={active ? "page" : undefined}
+    >
+      {bibliotecaReviewLink.label}
+    </Link>
+  );
+}
+
+function NovoMenu({ createLinks }: { createLinks: NavLink[] }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="sm" aria-label="Criar" />}
+      >
+        <PlusIcon data-icon="inline-start" />
+        Novo
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuGroup>
+          {createLinks.map((link) => (
+            <DropdownMenuItem
+              key={link.href}
+              nativeButton={false}
+              render={<Link href={link.href} />}
+            >
+              {link.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function UserAvatar({
+  user,
+  size = "default",
+}: {
+  user: HeaderUser;
+  size?: "default" | "sm" | "lg";
+}) {
+  const label = user.name ?? "Conta";
+
+  return (
+    <Avatar size={size}>
+      {user.image ? (
+        <AvatarImage src={user.image} alt={label} />
+      ) : null}
+      <AvatarFallback>{userInitials(user.name)}</AvatarFallback>
+    </Avatar>
+  );
+}
+
+function UserMenu({
+  signedIn,
+  user,
+  className,
+  variant = "desktop",
+}: {
+  signedIn: boolean;
+  user: HeaderUser | null;
+  className?: string;
+  variant?: "desktop" | "mobile";
+}) {
+  if (!signedIn || !user) {
+    return (
+      <Link
+        href="/entrar"
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          "no-underline",
+          className,
+        )}
+      >
+        Entrar
+      </Link>
+    );
+  }
+
+  if (variant === "mobile") {
+    return (
+      <form action={signOutAction} className={className}>
+        <Button type="submit" variant="ghost" size="sm" className="w-full">
+          Sair
+        </Button>
+      </form>
+    );
+  }
+
+  return (
+    <>
+      <form action={signOutAction} id="header-sign-out" className="hidden" />
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="rounded-full"
+              aria-label={user.name ?? "Conta"}
+            />
+          }
+        >
+          <UserAvatar user={user} size="sm" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              render={
+                <button type="submit" form="header-sign-out" className="w-full" />
+              }
+            >
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }
 
@@ -244,18 +390,10 @@ function ModeSwitch({
       aria-label="Áreas"
       className={cn("inline-flex rounded-full bg-muted p-0.5", className)}
     >
-      <ModeLink
-        href="/"
-        active={mode === "biblioteca"}
-        inSheet={inSheet}
-      >
+      <ModeLink href="/" active={mode === "biblioteca"} inSheet={inSheet}>
         Biblioteca
       </ModeLink>
-      <ModeLink
-        href="/slides"
-        active={mode === "slides"}
-        inSheet={inSheet}
-      >
+      <ModeLink href="/slides" active={mode === "slides"} inSheet={inSheet}>
         Slides
       </ModeLink>
     </nav>
@@ -305,37 +443,6 @@ function ModeLink({
       aria-current={active ? "page" : undefined}
     >
       {children}
-    </Link>
-  );
-}
-
-function AuthControl({
-  signedIn,
-  className,
-}: {
-  signedIn: boolean;
-  className?: string;
-}) {
-  if (signedIn) {
-    return (
-      <form action={signOutAction} className={className}>
-        <Button type="submit" variant="ghost" size="sm" className="w-full">
-          Sair
-        </Button>
-      </form>
-    );
-  }
-
-  return (
-    <Link
-      href="/entrar"
-      className={cn(
-        buttonVariants({ variant: "ghost", size: "sm" }),
-        "no-underline",
-        className,
-      )}
-    >
-      Entrar
     </Link>
   );
 }
