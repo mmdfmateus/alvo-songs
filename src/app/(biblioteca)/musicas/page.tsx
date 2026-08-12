@@ -23,7 +23,7 @@ export default async function SongsPage({
     <>
       <h1 className="mb-3 text-2xl font-semibold tracking-tight">Músicas</h1>
       {songs.length === 0 ? (
-        <p className="text-muted">
+        <p className="text-muted-foreground">
           {query
             ? "Nenhuma música encontrada."
             : "Nenhuma música na Biblioteca ainda."}
@@ -40,7 +40,7 @@ export default async function SongsPage({
                 >
                   <span className="font-medium">{song.title}</span>
                   {song.artist ? (
-                    <span className="mt-0.5 block text-sm text-muted">
+                    <span className="mt-0.5 block text-sm text-muted-foreground">
                       {song.artist.name}
                     </span>
                   ) : null}

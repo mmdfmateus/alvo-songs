@@ -10,7 +10,7 @@ export default async function NewSongPage() {
         <h1 className="mb-3 text-2xl font-semibold tracking-tight">
           Nova música
         </h1>
-        <p className="text-muted">Apenas editores podem criar músicas.</p>
+        <p className="text-muted-foreground">Apenas editores podem criar músicas.</p>
       </>
     );
   }

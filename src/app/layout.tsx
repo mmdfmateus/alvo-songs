@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 
 export const metadata: Metadata = {
   title: "Alvo Cifras",
@@ -20,7 +21,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className={dmSans.variable}>
+    <html lang="pt-BR" className={cn("font-sans", dmSans.variable)}>
       <body className="min-h-screen font-sans">
         <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>

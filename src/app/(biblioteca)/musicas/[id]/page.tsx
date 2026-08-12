@@ -43,14 +43,14 @@ export default async function SongPage({
               {song.artist ? (
                 <Link
                   href={`/artistas/${song.artist.id}`}
-                  className="mt-1 inline-block text-sm font-medium text-muted no-underline hover:text-ink"
+                  className="mt-1 inline-block text-sm font-medium text-muted-foreground no-underline hover:text-ink"
                 >
                   {song.artist.name}
                 </Link>
               ) : null}
               {viewer.isEditor && flags.length > 0 ? (
                 <div className="mt-2">
-                  <p className="text-sm text-muted">
+                  <p className="text-sm text-muted-foreground">
                     Sinalizada na importação do livrinho.
                   </p>
                   <LivrinhoFlags flags={flags} />

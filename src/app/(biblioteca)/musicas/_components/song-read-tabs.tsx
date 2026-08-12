@@ -30,7 +30,7 @@ export function SongReadTabs({
           role="tab"
           aria-selected={tab === "cifra"}
           className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-            tab === "cifra" ? "bg-ink text-white" : "text-muted"
+            tab === "cifra" ? "bg-ink text-white" : "text-muted-foreground"
           }`}
           onClick={() => setTab("cifra")}
         >
@@ -41,7 +41,7 @@ export function SongReadTabs({
           role="tab"
           aria-selected={tab === "letra"}
           className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-            tab === "letra" ? "bg-ink text-white" : "text-muted"
+            tab === "letra" ? "bg-ink text-white" : "text-muted-foreground"
           }`}
           onClick={() => setTab("letra")}
         >
@@ -53,7 +53,7 @@ export function SongReadTabs({
             role="tab"
             aria-selected={tab === "listen"}
             className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-              tab === "listen" ? "bg-ink text-white" : "text-muted"
+              tab === "listen" ? "bg-ink text-white" : "text-muted-foreground"
             }`}
             onClick={() => setTab("listen")}
           >

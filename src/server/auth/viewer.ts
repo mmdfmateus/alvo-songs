@@ -1,8 +1,14 @@
 import type { Session } from "next-auth";
 
+export type ViewerUser = {
+  name: string | null;
+  image: string | null;
+};
+
 export type Viewer = {
   signedIn: boolean;
   isEditor: boolean;
+  user: ViewerUser | null;
 };
 
 export type ViewerDb = {
@@ -34,11 +40,15 @@ export async function resolveViewer(
   session: Session | null,
 ): Promise<Viewer> {
   if (!session?.user?.id) {
-    return { signedIn: false, isEditor: false };
+    return { signedIn: false, isEditor: false, user: null };
   }
 
   return {
     signedIn: true,
     isEditor: await loadIsEditor(db, session.user.id),
+    user: {
+      name: session.user.name ?? null,
+      image: session.user.image ?? null,
+    },
   };
 }

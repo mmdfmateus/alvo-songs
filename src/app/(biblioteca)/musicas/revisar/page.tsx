@@ -13,7 +13,7 @@ export default async function LivrinhoReviewPage() {
         <h1 className="mb-3 text-2xl font-semibold tracking-tight">
           Revisar importação
         </h1>
-        <p className="text-muted">Apenas editores revisam o livrinho.</p>
+        <p className="text-muted-foreground">Apenas editores revisam o livrinho.</p>
       </>
     );
   }
@@ -30,12 +30,12 @@ export default async function LivrinhoReviewPage() {
       <h1 className="mb-3 text-2xl font-semibold tracking-tight">
         Revisar importação
       </h1>
-      <p className="mb-4 text-sm text-muted">
+      <p className="mb-4 text-sm text-muted-foreground">
         Cifra e Trechos do livrinho que o seed sinalizou. Artist fica vazio até
         um editor creditar.
       </p>
       {flagged.length === 0 ? (
-        <p className="text-muted">Nenhuma música sinalizada.</p>
+        <p className="text-muted-foreground">Nenhuma música sinalizada.</p>
       ) : (
         <ul className="divide-y divide-line rounded-[10px] border border-line bg-paper">
           {flagged.map((song) => {
@@ -53,7 +53,7 @@ export default async function LivrinhoReviewPage() {
                   <span className="font-medium">{song.title}</span>
                 )}
                 {!id ? (
-                  <p className="mt-0.5 text-sm text-muted">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     Ainda não está na Biblioteca. Rode <code>pnpm db:seed</code>.
                   </p>
                 ) : null}

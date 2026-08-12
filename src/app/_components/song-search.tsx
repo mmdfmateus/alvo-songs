@@ -1,15 +1,27 @@
 "use client";
 
-export function SongSearch() {
+import { SearchIcon } from "lucide-react";
+
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "~/components/ui/input-group";
+
+export function SongSearch({ className }: { className?: string }) {
   return (
-    <form action="/musicas" method="get" className="min-w-44 flex-1">
-      <input
-        type="search"
-        name="q"
-        className="w-full rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm"
-        placeholder="Procure por uma música ou artista"
-        aria-label="Procure por uma música ou artista"
-      />
+    <form action="/musicas" method="get" className={className}>
+      <InputGroup className="h-9 bg-muted/60">
+        <InputGroupInput
+          type="search"
+          name="q"
+          placeholder="Procure por uma música ou artista"
+          aria-label="Procure por uma música ou artista"
+        />
+        <InputGroupAddon>
+          <SearchIcon />
+        </InputGroupAddon>
+      </InputGroup>
     </form>
   );
 }

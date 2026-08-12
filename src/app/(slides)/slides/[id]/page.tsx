@@ -21,7 +21,7 @@ export default async function ProgramViewPage({
   return (
     <>
       <h1 className="mb-1 text-2xl font-semibold tracking-tight">{program.name}</h1>
-      <p className="mb-6 text-sm text-muted">Visualização pública. Só quem criou pode editar.</p>
+      <p className="mb-6 text-sm text-muted-foreground">Visualização pública. Só quem criou pode editar.</p>
       <ExportPdfButton slides={program.slides} programName={program.name} />
       {brokenRefs.length > 0 ? (
         <p className="mb-4 text-sm text-accent">

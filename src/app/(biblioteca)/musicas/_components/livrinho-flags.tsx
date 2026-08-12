@@ -11,7 +11,7 @@ export function LivrinhoFlags({ flags }: { flags: LivrinhoFlag[] }) {
       {flags.map((flag) => (
         <li
           key={flag}
-          className="rounded-full bg-[#f0f0ec] px-2 py-0.5 text-xs font-medium text-muted"
+          className="rounded-full bg-[#f0f0ec] px-2 py-0.5 text-xs font-medium text-muted-foreground"
         >
           {LIVRINHO_FLAG_LABEL[flag]}
         </li>

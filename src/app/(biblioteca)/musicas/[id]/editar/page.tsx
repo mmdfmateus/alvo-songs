@@ -21,7 +21,7 @@ export default async function EditSongPage({
         <h1 className="mb-3 text-2xl font-semibold tracking-tight">
           Editar música
         </h1>
-        <p className="text-muted">Apenas editores podem editar músicas.</p>
+        <p className="text-muted-foreground">Apenas editores podem editar músicas.</p>
       </>
     );
   }

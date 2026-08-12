@@ -14,7 +14,7 @@ function pdfFilename(programName: string): string {
 
 export function ExportPdfHint() {
   return (
-    <p className="text-sm text-muted">
+    <p className="text-sm text-muted-foreground">
       Depois de baixar, envie o PDF no Canva (computador) para colocar imagens
       nos slides em branco de Recados, compartilhar ou guardar.
     </p>

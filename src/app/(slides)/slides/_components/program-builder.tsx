@@ -260,7 +260,7 @@ function SongPicker({
         </p>
       ) : null}
       {!songId ? (
-        <p className="text-sm text-muted">Escolha uma música da Biblioteca.</p>
+        <p className="text-sm text-muted-foreground">Escolha uma música da Biblioteca.</p>
       ) : null}
     </div>
   );
@@ -440,7 +440,7 @@ export function ProgramBuilder({
           {saveStatus ? (
             <p
               className={`text-sm ${
-                autosaveStatus === "error" ? "text-accent" : "text-muted"
+                autosaveStatus === "error" ? "text-accent" : "text-muted-foreground"
               }`}
               aria-live="polite"
             >
@@ -459,7 +459,7 @@ export function ProgramBuilder({
             href={`/slides/${program.id}`}
             aria-label="Ver link público"
             title="Ver link público"
-            className="rounded-md p-1.5 text-muted no-underline hover:bg-[#f0f0ec] hover:text-ink"
+            className="rounded-md p-1.5 text-muted-foreground no-underline hover:bg-[#f0f0ec] hover:text-ink"
           >
             <IconPublicLink className="size-4" />
           </Link>
@@ -532,7 +532,7 @@ export function ProgramBuilder({
                       setDragIndex(index);
                     }}
                     onDragEnd={() => setDragIndex(null)}
-                    className="cursor-grab touch-none text-muted hover:text-ink active:cursor-grabbing"
+                    className="cursor-grab touch-none text-muted-foreground hover:text-ink active:cursor-grabbing"
                   >
                     <IconGrip className="size-4" />
                   </button>
@@ -547,7 +547,7 @@ export function ProgramBuilder({
                     title="Subir"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
-                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
                     <IconArrowUp className="size-4" />
                   </button>
@@ -557,7 +557,7 @@ export function ProgramBuilder({
                     title="Descer"
                     onClick={() => move(index, 1)}
                     disabled={index === sections.length - 1}
-                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
                     <IconArrowDown className="size-4" />
                   </button>

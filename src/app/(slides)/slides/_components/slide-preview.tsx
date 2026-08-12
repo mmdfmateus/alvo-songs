@@ -2,7 +2,7 @@ import type { Slide } from "~/lib/slides";
 
 export function SlidePreview({ slides }: { slides: Slide[] }) {
   if (slides.length === 0) {
-    return <p className="text-muted">Nenhum slide ainda.</p>;
+    return <p className="text-muted-foreground">Nenhum slide ainda.</p>;
   }
 
   return (
@@ -16,7 +16,7 @@ export function SlidePreview({ slides }: { slides: Slide[] }) {
             <>
               <p className="text-lg font-semibold">{slide.communityName}</p>
               {slide.subtitle ? (
-                <p className="text-sm text-muted">{slide.subtitle}</p>
+                <p className="text-sm text-muted-foreground">{slide.subtitle}</p>
               ) : null}
             </>
           ) : null}
@@ -27,7 +27,7 @@ export function SlidePreview({ slides }: { slides: Slide[] }) {
             <p className="whitespace-pre-wrap text-sm">{slide.text}</p>
           ) : null}
           {slide.kind === "blank" ? (
-            <p className="text-sm text-muted">Reservado para preencher depois</p>
+            <p className="text-sm text-muted-foreground">Reservado para preencher depois</p>
           ) : null}
         </li>
       ))}
