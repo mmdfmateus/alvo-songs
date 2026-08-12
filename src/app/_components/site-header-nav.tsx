@@ -1,9 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MenuIcon, PlusIcon } from "lucide-react";
+import { MenuIcon, PlusIcon, Presentation } from "lucide-react";
 
 import {
   bibliotecaBrowseLinks,
@@ -12,6 +11,7 @@ import {
   isNavActive,
   type NavLink,
 } from "~/app/_components/biblioteca-subnav";
+import { CriarSlidesLink } from "~/app/_components/criar-slides-link";
 import { signOutAction } from "~/app/_components/sign-out-action";
 import { SongSearch } from "~/app/_components/song-search";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -59,17 +59,15 @@ export function SiteHeaderNav({
   user: HeaderUser | null;
 }) {
   const pathname = usePathname();
-  const desktopBrowseLinks =
-    mode === "biblioteca" ? bibliotecaBrowseLinks : [];
-  const mobileBrowseLinks =
-    mode === "biblioteca"
-      ? isEditor
-        ? [...bibliotecaBrowseLinks, bibliotecaReviewLink]
-        : bibliotecaBrowseLinks
-      : [];
-  const createLinks =
-    mode === "biblioteca" && isEditor ? bibliotecaCreateLinks : [];
-  const showReview = mode === "biblioteca" && isEditor;
+  const onSlides = mode === "slides";
+  const desktopBrowseLinks = onSlides ? [] : bibliotecaBrowseLinks;
+  const mobileBrowseLinks = onSlides
+    ? []
+    : isEditor
+      ? [...bibliotecaBrowseLinks, bibliotecaReviewLink]
+      : bibliotecaBrowseLinks;
+  const createLinks = !onSlides && isEditor ? bibliotecaCreateLinks : [];
+  const showReview = !onSlides && isEditor;
   const activeHrefs = [
     ...desktopBrowseLinks,
     ...(showReview ? [bibliotecaReviewLink] : []),
@@ -80,44 +78,64 @@ export function SiteHeaderNav({
     <header className="sticky top-0 z-10 border-b-[3px] border-accent bg-paper/95 backdrop-blur-sm">
       <div className="flex items-center gap-2 px-4 py-2.5 md:grid md:grid-cols-[1fr_min(32rem,100%)_1fr] md:items-center md:gap-4 md:px-5">
         <div className="flex min-w-0 items-center gap-2 md:gap-3">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center gap-2 font-bold tracking-tight no-underline"
-          >
-            <span className="grid size-7 place-items-center rounded-md bg-accent text-xs font-bold text-accent-foreground">
-              A
-            </span>
-            <span className="hidden sm:inline">Alvo Cifras</span>
-          </Link>
-
-          {desktopBrowseLinks.length > 0 ? (
-            <NavigationMenu
-              className="hidden flex-none md:flex"
-              aria-label="Biblioteca"
+          {onSlides ? (
+            <Link
+              href="/"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "no-underline",
+              )}
             >
-              <NavigationMenuList>
-                {desktopBrowseLinks.map((link) => (
-                  <DesktopNavLink
-                    key={link.href}
-                    link={link}
-                    active={isNavActive(pathname, link.href, activeHrefs)}
-                  />
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-          ) : null}
+              ← Biblioteca
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/"
+                className="flex shrink-0 items-center gap-2 font-bold tracking-tight no-underline"
+              >
+                <span className="grid size-7 place-items-center rounded-md bg-accent text-xs font-bold text-accent-foreground">
+                  A
+                </span>
+                <span className="hidden sm:inline">Alvo Cifras</span>
+              </Link>
+
+              {desktopBrowseLinks.length > 0 ? (
+                <NavigationMenu
+                  className="hidden flex-none md:flex"
+                  aria-label="Biblioteca"
+                >
+                  <NavigationMenuList>
+                    {desktopBrowseLinks.map((link) => (
+                      <DesktopNavLink
+                        key={link.href}
+                        link={link}
+                        active={isNavActive(pathname, link.href, activeHrefs)}
+                      />
+                    ))}
+                  </NavigationMenuList>
+                </NavigationMenu>
+              ) : null}
+            </>
+          )}
         </div>
 
         <SongSearch className="min-w-0 flex-1 md:col-start-2 md:w-full md:flex-none md:justify-self-center" />
 
         <div className="flex shrink-0 items-center gap-1 md:justify-self-end md:gap-2">
           <div className="hidden items-center gap-1 md:flex">
-            <ModeSwitch mode={mode} />
-            {createLinks.length > 0 ? (
-              <NovoMenu createLinks={createLinks} />
-            ) : null}
+            {createLinks.length > 0 ? <NovoMenu createLinks={createLinks} /> : null}
             {showReview ? (
-              <ReviewLink active={isNavActive(pathname, bibliotecaReviewLink.href, activeHrefs)} />
+              <ReviewLink
+                active={isNavActive(
+                  pathname,
+                  bibliotecaReviewLink.href,
+                  activeHrefs,
+                )}
+              />
+            ) : null}
+            {!onSlides ? (
+              <CriarSlidesLink className="text-muted-foreground" />
             ) : null}
             <UserMenu signedIn={signedIn} user={user} />
           </div>
@@ -151,7 +169,11 @@ export function SiteHeaderNav({
                   </div>
                 ) : null}
 
-                <ModeSwitch mode={mode} className="w-full" inSheet />
+                {onSlides ? (
+                  <MobilePlainLink href="/" label="← Biblioteca" />
+                ) : (
+                  <MobileCriarSlidesLink />
+                )}
 
                 {mobileBrowseLinks.length > 0 ? (
                   <nav aria-label="Biblioteca" className="flex flex-col gap-1">
@@ -274,9 +296,7 @@ function UserAvatar({
 
   return (
     <Avatar size={size}>
-      {user.image ? (
-        <AvatarImage src={user.image} alt={label} />
-      ) : null}
+      {user.image ? <AvatarImage src={user.image} alt={label} /> : null}
       <AvatarFallback>{userInitials(user.name)}</AvatarFallback>
     </Avatar>
   );
@@ -376,73 +396,38 @@ function MobileNavLink({
   );
 }
 
-function ModeSwitch({
-  mode,
-  className,
-  inSheet = false,
-}: {
-  mode: "biblioteca" | "slides";
-  className?: string;
-  inSheet?: boolean;
-}) {
+function MobilePlainLink({ href, label }: { href: string; label: string }) {
   return (
-    <nav
-      aria-label="Áreas"
-      className={cn("inline-flex rounded-full bg-muted p-0.5", className)}
+    <SheetClose
+      nativeButton={false}
+      render={
+        <Link
+          href={href}
+          className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}
+        />
+      }
     >
-      <ModeLink href="/" active={mode === "biblioteca"} inSheet={inSheet}>
-        Biblioteca
-      </ModeLink>
-      <ModeLink href="/slides" active={mode === "slides"} inSheet={inSheet}>
-        Slides
-      </ModeLink>
-    </nav>
+      {label}
+    </SheetClose>
   );
 }
 
-function ModeLink({
-  href,
-  active,
-  inSheet,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  inSheet: boolean;
-  children: ReactNode;
-}) {
-  const className = cn(
-    buttonVariants({
-      variant: active ? "default" : "ghost",
-      size: "sm",
-    }),
-    "flex-1 rounded-full no-underline",
-  );
-
-  if (inSheet) {
-    return (
-      <SheetClose
-        nativeButton={false}
-        render={
-          <Link
-            href={href}
-            className={className}
-            aria-current={active ? "page" : undefined}
-          />
-        }
-      >
-        {children}
-      </SheetClose>
-    );
-  }
-
+function MobileCriarSlidesLink() {
   return (
-    <Link
-      href={href}
-      className={className}
-      aria-current={active ? "page" : undefined}
+    <SheetClose
+      nativeButton={false}
+      render={
+        <Link
+          href="/slides"
+          className={cn(
+            buttonVariants({ variant: "ghost" }),
+            "justify-start no-underline",
+          )}
+        />
+      }
     >
-      {children}
-    </Link>
+      <Presentation data-icon="inline-start" />
+      Criar slides
+    </SheetClose>
   );
 }
