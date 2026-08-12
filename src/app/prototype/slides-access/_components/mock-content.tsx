@@ -1,11 +1,43 @@
 import Link from "next/link";
+import { Presentation } from "lucide-react";
 
 import { Button, buttonVariants } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
 import type { PrototypeSurface } from "~/app/prototype/slides-access/_components/mock-chrome";
 
-export function MockBibliotecaHome({ showSlidesCta = false }: { showSlidesCta?: boolean }) {
+export function CriarSlidesLink({
+  href = "?surface=slides",
+  variant = "ghost",
+  className,
+  current = false,
+}: {
+  href?: string;
+  variant?: "ghost" | "outline" | "secondary";
+  className?: string;
+  current?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        buttonVariants({ variant, size: "sm" }),
+        "no-underline",
+        className,
+      )}
+      aria-current={current ? "page" : undefined}
+    >
+      <Presentation data-icon="inline-start" />
+      Criar slides
+    </Link>
+  );
+}
+
+export function MockBibliotecaHome({
+  showSlidesCta = false,
+}: {
+  showSlidesCta?: boolean;
+}) {
   return (
     <div className="mx-auto max-w-[920px] px-5 py-6">
       <div className="grid gap-4 md:grid-cols-2">
@@ -37,20 +69,15 @@ export function MockBibliotecaHome({ showSlidesCta = false }: { showSlidesCta?: 
 
       {showSlidesCta ? (
         <section className="mt-4 rounded-[10px] border border-dashed border-line bg-paper p-4">
-          <p className="text-sm font-medium">Montar slides para o culto</p>
+          <p className="text-sm font-medium">Montar slides para o programa</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Use músicas da Biblioteca num programa de projeção. Não precisa de
             conta.
           </p>
-          <Link
-            href="/slides"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "mt-3 inline-flex no-underline",
-            )}
-          >
-            Abrir Slides
-          </Link>
+          <CriarSlidesLink
+            variant="outline"
+            className="mt-3 inline-flex"
+          />
         </section>
       ) : null}
     </div>
@@ -64,9 +91,12 @@ export function MockSlidesHome() {
       <p className="mb-6 text-sm text-muted-foreground">
         Neste dispositivo. Só quem criou pode editar.
       </p>
-      <Button>Novo slide</Button>
+      <Button>
+        <Presentation data-icon="inline-start" />
+        Criar slides
+      </Button>
       <ul className="mt-6 divide-y divide-line rounded-[10px] border border-line bg-paper">
-        {["Culto 12/08", "Ensaio COMU"].map((name) => (
+        {["Programa 12/08", "Ensaio COMU"].map((name) => (
           <li key={name} className="px-4 py-3 text-sm font-medium">
             {name}
           </li>

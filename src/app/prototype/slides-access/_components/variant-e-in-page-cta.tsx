@@ -16,8 +16,9 @@ export const variantMeta = {
   key: "E",
   name: "CTA na home — zero no header",
   slidesEntry:
-    "Nenhuma menção a Slides no header. Card “Montar slides” só na home da Biblioteca.",
-  tradeoff: "Biblioteca limpa; Slides só aparece se o usuário rolar a home ou souber a URL.",
+    "Nenhuma menção a Slides no header. Card “Criar slides” só na home da Biblioteca.",
+  tradeoff:
+    "Biblioteca limpa; Slides só aparece se o usuário rolar a home ou souber a URL.",
 };
 
 export function VariantEInPageCta({ surface }: { surface: PrototypeSurface }) {
