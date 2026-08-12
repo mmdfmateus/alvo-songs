@@ -12,7 +12,7 @@ export default async function HomePage() {
     <div className="grid gap-4 md:grid-cols-2">
       <section className="flex min-h-56 flex-col rounded-[10px] border border-line bg-paper p-4">
         <h1 className="text-xl font-semibold">Músicas</h1>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-muted-foreground">
           {songs.length === 0
             ? "A Biblioteca ainda está vazia."
             : `${songs.length} músicas.`}
@@ -28,7 +28,7 @@ export default async function HomePage() {
       </section>
       <section className="flex min-h-56 flex-col rounded-[10px] border border-line bg-paper p-4">
         <h2 className="text-xl font-semibold">Artistas</h2>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-muted-foreground">
           {artists.length === 0
             ? "Nenhum artista ainda."
             : `${artists.length} artistas.`}

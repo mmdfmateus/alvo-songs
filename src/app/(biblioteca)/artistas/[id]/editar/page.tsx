@@ -20,7 +20,7 @@ export default async function EditArtistPage({
         <h1 className="mb-3 text-2xl font-semibold tracking-tight">
           Editar artista
         </h1>
-        <p className="text-muted">Apenas editores podem editar artistas.</p>
+        <p className="text-muted-foreground">Apenas editores podem editar artistas.</p>
       </>
     );
   }

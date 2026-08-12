@@ -9,7 +9,7 @@ export default async function ArtistsPage() {
     <>
       <h1 className="mb-3 text-2xl font-semibold tracking-tight">Artistas</h1>
       {artists.length === 0 ? (
-        <p className="text-muted">Nenhum artista ainda.</p>
+        <p className="text-muted-foreground">Nenhum artista ainda.</p>
       ) : (
         <ul className="divide-y divide-line rounded-[10px] border border-line bg-paper">
           {artists.map((artist) => (

@@ -11,7 +11,7 @@ export default async function SignInPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-12">
       <h1 className="mb-2 text-2xl font-semibold tracking-tight">Entrar</h1>
-      <p className="mb-6 text-muted">
+      <p className="mb-6 text-muted-foreground">
         Qualquer conta Google pode entrar. Só editores (marcados no banco)
         podem criar ou editar músicas e artistas.
       </p>

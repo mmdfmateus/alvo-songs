@@ -28,7 +28,7 @@ export default async function ProgramEditPage({
         <h1 className="mb-3 text-2xl font-semibold tracking-tight">
           Editar slides
         </h1>
-        <p className="text-muted">
+        <p className="text-muted-foreground">
           Só o navegador que criou estes Slides pode editar. Se o cookie foi
           perdido, o link continua só para visualização.
         </p>
@@ -49,7 +49,7 @@ export default async function ProgramEditPage({
         <h1 className="mb-3 text-2xl font-semibold tracking-tight">
           Editar slides
         </h1>
-        <p className="text-muted">
+        <p className="text-muted-foreground">
           Só o navegador que criou estes Slides pode editar.
         </p>
       </>

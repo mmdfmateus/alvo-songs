@@ -41,7 +41,7 @@ export default async function ArtistPage({
         ) : null}
       </div>
       {artist.songs.length === 0 ? (
-        <p className="text-muted">Nenhuma música deste artista ainda.</p>
+        <p className="text-muted-foreground">Nenhuma música deste artista ainda.</p>
       ) : (
         <ul className="divide-y divide-line rounded-[10px] border border-line bg-paper">
           {artist.songs.map((song) => (

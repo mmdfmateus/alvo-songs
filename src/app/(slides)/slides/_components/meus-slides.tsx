@@ -67,14 +67,14 @@ export function MeusSlides() {
       </form>
 
       {items.length === 0 ? (
-        <p className="text-muted">Nenhum slide neste dispositivo ainda.</p>
+        <p className="text-muted-foreground">Nenhum slide neste dispositivo ainda.</p>
       ) : (
         <ul className="divide-y divide-line rounded-[10px] border border-line bg-paper">
           {items.map((item) => (
             <li key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <span className="font-medium">{item.name}</span>
               <span className="flex gap-3 text-sm font-semibold">
-                <Link href={`/slides/${item.id}`} className="text-muted no-underline hover:text-ink">
+                <Link href={`/slides/${item.id}`} className="text-muted-foreground no-underline hover:text-ink">
                   Ver
                 </Link>
                 <Link

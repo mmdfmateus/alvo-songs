@@ -257,7 +257,7 @@ export function SongForm({ artists, song }: SongFormProps) {
         role="tab"
         aria-selected={tab === "cifra"}
         className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-          tab === "cifra" ? "bg-ink text-white" : "text-muted"
+          tab === "cifra" ? "bg-ink text-white" : "text-muted-foreground"
         }`}
         onClick={() => setTab("cifra")}
       >
@@ -268,7 +268,7 @@ export function SongForm({ artists, song }: SongFormProps) {
         role="tab"
         aria-selected={tab === "trechos"}
         className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-          tab === "trechos" ? "bg-ink text-white" : "text-muted"
+          tab === "trechos" ? "bg-ink text-white" : "text-muted-foreground"
         }`}
         onClick={() => setTab("trechos")}
       >
@@ -308,7 +308,7 @@ export function SongForm({ artists, song }: SongFormProps) {
           {saveStatus ? (
             <p
               className={`text-sm ${
-                autosaveStatus === "error" ? "text-accent" : "text-muted"
+                autosaveStatus === "error" ? "text-accent" : "text-muted-foreground"
               }`}
               aria-live="polite"
             >
@@ -360,7 +360,7 @@ export function SongForm({ artists, song }: SongFormProps) {
           placeholder="ID do vídeo ou URL"
           className="rounded-lg border border-line bg-[#fafafa] px-3 py-2 text-sm font-normal"
         />
-        <span className="font-normal text-muted">
+        <span className="font-normal text-muted-foreground">
           Cole o id do vídeo (ex.: dQw4w9WgXcQ) ou a URL completa.
         </span>
       </label>
@@ -423,7 +423,7 @@ export function SongForm({ artists, song }: SongFormProps) {
                     setDragIndex(index);
                   }}
                   onDragEnd={() => setDragIndex(null)}
-                  className="cursor-grab touch-none text-muted hover:text-ink active:cursor-grabbing"
+                  className="cursor-grab touch-none text-muted-foreground hover:text-ink active:cursor-grabbing"
                 >
                   <IconGrip className="size-4" />
                 </button>
@@ -434,7 +434,7 @@ export function SongForm({ artists, song }: SongFormProps) {
                     title="Subir"
                     onClick={() => moveChunk(index, -1)}
                     disabled={index === 0}
-                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
                     <IconArrowUp className="size-4" />
                   </button>
@@ -444,7 +444,7 @@ export function SongForm({ artists, song }: SongFormProps) {
                     title="Descer"
                     onClick={() => moveChunk(index, 1)}
                     disabled={index === chunks.length - 1}
-                    className="rounded-md p-1.5 text-muted hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
                   >
                     <IconArrowDown className="size-4" />
                   </button>

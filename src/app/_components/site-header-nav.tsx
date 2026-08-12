@@ -1,0 +1,341 @@
+"use client";
+
+import type { ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { MenuIcon, PlusIcon } from "lucide-react";
+
+import {
+  bibliotecaBrowseLinks,
+  bibliotecaCreateLinks,
+  bibliotecaReviewLink,
+  isNavActive,
+  type NavLink,
+} from "~/app/_components/biblioteca-subnav";
+import { signOutAction } from "~/app/_components/sign-out-action";
+import { SongSearch } from "~/app/_components/song-search";
+import { Button, buttonVariants } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "~/components/ui/navigation-menu";
+import { Separator } from "~/components/ui/separator";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
+import { cn } from "~/lib/utils";
+
+export function SiteHeaderNav({
+  mode,
+  signedIn,
+  isEditor,
+}: {
+  mode: "biblioteca" | "slides";
+  signedIn: boolean;
+  isEditor: boolean;
+}) {
+  const pathname = usePathname();
+  const browseLinks =
+    mode === "biblioteca"
+      ? isEditor
+        ? [...bibliotecaBrowseLinks, bibliotecaReviewLink]
+        : bibliotecaBrowseLinks
+      : [];
+  const createLinks =
+    mode === "biblioteca" && isEditor ? bibliotecaCreateLinks : [];
+  const allHrefs = [...browseLinks, ...createLinks].map((link) => link.href);
+
+  return (
+    <header className="sticky top-0 z-10 border-b-[3px] border-accent bg-paper/95 backdrop-blur-sm">
+      <div className="flex items-center gap-2 px-4 py-2.5 md:gap-3 md:px-5">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2 font-bold tracking-tight no-underline"
+        >
+          <span className="grid size-7 place-items-center rounded-md bg-accent text-xs font-bold text-accent-foreground">
+            A
+          </span>
+          <span className="hidden sm:inline">Alvo Cifras</span>
+        </Link>
+
+        {browseLinks.length > 0 ? (
+          <NavigationMenu
+            className="hidden flex-none md:flex"
+            aria-label="Biblioteca"
+          >
+            <NavigationMenuList>
+              {browseLinks.map((link) => (
+                <DesktopNavLink
+                  key={link.href}
+                  link={link}
+                  active={isNavActive(pathname, link.href, allHrefs)}
+                />
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
+        ) : null}
+
+        {createLinks.length > 0 ? (
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="ghost" size="sm" aria-label="Criar" />
+                }
+              >
+                <PlusIcon data-icon="inline-start" />
+                Novo
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuGroup>
+                  {createLinks.map((link) => (
+                    <DropdownMenuItem
+                      key={link.href}
+                      nativeButton={false}
+                      render={<Link href={link.href} />}
+                    >
+                      {link.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ) : null}
+
+        <SongSearch className="min-w-0 flex-1 md:max-w-md lg:max-w-xl" />
+
+        <ModeSwitch mode={mode} className="hidden md:inline-flex" />
+
+        <AuthControl signedIn={signedIn} className="hidden md:inline-flex" />
+
+        <Sheet>
+          <SheetTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label="Abrir menu"
+              />
+            }
+          >
+            <MenuIcon />
+          </SheetTrigger>
+          <SheetContent side="right" className="w-72">
+            <SheetHeader>
+              <SheetTitle>Menu</SheetTitle>
+            </SheetHeader>
+            <div className="flex flex-col gap-4 px-4 pb-4">
+              <ModeSwitch mode={mode} className="w-full" inSheet />
+
+              {browseLinks.length > 0 ? (
+                <nav aria-label="Biblioteca" className="flex flex-col gap-1">
+                  {browseLinks.map((link) => (
+                    <MobileNavLink
+                      key={link.href}
+                      link={link}
+                      active={isNavActive(pathname, link.href, allHrefs)}
+                    />
+                  ))}
+                </nav>
+              ) : null}
+
+              {createLinks.length > 0 ? (
+                <>
+                  <Separator />
+                  <nav aria-label="Criar" className="flex flex-col gap-1">
+                    {createLinks.map((link) => (
+                      <MobileNavLink
+                        key={link.href}
+                        link={link}
+                        active={isNavActive(pathname, link.href, allHrefs)}
+                      />
+                    ))}
+                  </nav>
+                </>
+              ) : null}
+
+              <Separator />
+              <AuthControl signedIn={signedIn} className="w-full" />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </header>
+  );
+}
+
+function DesktopNavLink({
+  link,
+  active,
+}: {
+  link: NavLink;
+  active: boolean;
+}) {
+  return (
+    <NavigationMenuItem>
+      <NavigationMenuLink
+        render={<Link href={link.href} />}
+        className={cn(
+          navigationMenuTriggerStyle(),
+          active && "bg-muted text-foreground",
+        )}
+        aria-current={active ? "page" : undefined}
+      >
+        {link.label}
+      </NavigationMenuLink>
+    </NavigationMenuItem>
+  );
+}
+
+function MobileNavLink({
+  link,
+  active,
+}: {
+  link: NavLink;
+  active: boolean;
+}) {
+  return (
+    <SheetClose
+      nativeButton={false}
+      render={
+        <Link
+          href={link.href}
+          className={cn(
+            buttonVariants({ variant: active ? "secondary" : "ghost" }),
+            "justify-start",
+          )}
+          aria-current={active ? "page" : undefined}
+        />
+      }
+    >
+      {link.label}
+    </SheetClose>
+  );
+}
+
+function ModeSwitch({
+  mode,
+  className,
+  inSheet = false,
+}: {
+  mode: "biblioteca" | "slides";
+  className?: string;
+  inSheet?: boolean;
+}) {
+  return (
+    <nav
+      aria-label="Áreas"
+      className={cn("inline-flex rounded-full bg-muted p-0.5", className)}
+    >
+      <ModeLink
+        href="/"
+        active={mode === "biblioteca"}
+        inSheet={inSheet}
+      >
+        Biblioteca
+      </ModeLink>
+      <ModeLink
+        href="/slides"
+        active={mode === "slides"}
+        inSheet={inSheet}
+      >
+        Slides
+      </ModeLink>
+    </nav>
+  );
+}
+
+function ModeLink({
+  href,
+  active,
+  inSheet,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  inSheet: boolean;
+  children: ReactNode;
+}) {
+  const className = cn(
+    buttonVariants({
+      variant: active ? "default" : "ghost",
+      size: "sm",
+    }),
+    "flex-1 rounded-full no-underline",
+  );
+
+  if (inSheet) {
+    return (
+      <SheetClose
+        nativeButton={false}
+        render={
+          <Link
+            href={href}
+            className={className}
+            aria-current={active ? "page" : undefined}
+          />
+        }
+      >
+        {children}
+      </SheetClose>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className={className}
+      aria-current={active ? "page" : undefined}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function AuthControl({
+  signedIn,
+  className,
+}: {
+  signedIn: boolean;
+  className?: string;
+}) {
+  if (signedIn) {
+    return (
+      <form action={signOutAction} className={className}>
+        <Button type="submit" variant="ghost" size="sm" className="w-full">
+          Sair
+        </Button>
+      </form>
+    );
+  }
+
+  return (
+    <Link
+      href="/entrar"
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "sm" }),
+        "no-underline",
+        className,
+      )}
+    >
+      Entrar
+    </Link>
+  );
+}
