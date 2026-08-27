@@ -9,8 +9,8 @@ const PAGE_SIZE = { width: PDF_PAGE_WIDTH, height: PDF_PAGE_HEIGHT } as const;
 
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: "#1a1028",
-    color: "#ffffff",
+    backgroundColor: "#ffffff",
+    color: "#141414",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
@@ -19,27 +19,27 @@ const styles = StyleSheet.create({
   communityName: {
     fontSize: 48,
     fontFamily: "Helvetica-Bold",
-    color: "#f97316",
+    color: "#141414",
     textAlign: "center",
   },
   subtitle: {
     marginTop: 16,
     fontSize: 22,
     fontFamily: "Helvetica",
-    color: "#e9d5ff",
+    color: "#6b6b6b",
     textAlign: "center",
   },
   title: {
     fontSize: 42,
     fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
+    color: "#141414",
     textAlign: "center",
   },
   lyric: {
     width: "100%",
     fontSize: 28,
     fontFamily: "Helvetica",
-    color: "#ffffff",
+    color: "#141414",
     textAlign: "center",
     lineHeight: 1.4,
   },
