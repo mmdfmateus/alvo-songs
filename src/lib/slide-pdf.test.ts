@@ -21,12 +21,13 @@ async function renderSlides(slides: Slide[]) {
   const pdf = await PDFDocument.load(buffer);
   const pages = pdf.getPages().map((page) => {
     const { width, height } = page.getSize();
-    return { width, height, text: pageText(page) };
+    const content = pageContent(page);
+    return { width, height, content, text: pdfShownText(content) };
   });
   return { buffer, pages };
 }
 
-function pageText(page: ReturnType<PDFDocument["getPages"]>[number]): string {
+function pageContent(page: ReturnType<PDFDocument["getPages"]>[number]): string {
   const contents = page.node.Contents();
   if (!contents) return "";
 
@@ -41,7 +42,7 @@ function pageText(page: ReturnType<PDFDocument["getPages"]>[number]): string {
       stream instanceof PDFRawStream
         ? decodePDFRawStream(stream).decode()
         : stream.getContents();
-    chunks.push(pdfShownText(Buffer.from(bytes).toString("latin1")));
+    chunks.push(Buffer.from(bytes).toString("latin1"));
   }
 
   return chunks.join("");
@@ -70,6 +71,24 @@ function pdfShownText(content: string): string {
   }
   return parts.join("");
 }
+
+test("pages match the website preview: white background and dark text", async () => {
+  const { pages } = await renderSlides([
+    { kind: "opening", communityName: "COMU JOVEM", subtitle: "Culto 09/08" },
+    { kind: "lyric", text: "Na cidade" },
+  ]);
+
+  for (const page of pages) {
+    expect(page.content).toContain("1 1 1 scn");
+    expect(page.content).toContain(
+      "0.0784313725490196 0.0784313725490196 0.0784313725490196 scn",
+    );
+  }
+
+  expect(pages[0]?.content).toContain(
+    "0.4196078431372549 0.4196078431372549 0.4196078431372549 scn",
+  );
+});
 
 test("Export PDF is 16:9 with one page per Slide", async () => {
   const slides: Slide[] = [
