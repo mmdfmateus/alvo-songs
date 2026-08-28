@@ -1,22 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
-import type { CifraViewLine } from "~/lib/cifra";
+import { cifraViewLines } from "~/lib/cifra";
+import { transposeCifra } from "~/lib/cifra-parse";
 
 type ReadTab = "cifra" | "letra" | "listen";
 
 export function SongReadTabs({
-  cifraLines,
+  cifra,
   letra,
   videoId,
 }: {
-  cifraLines: CifraViewLine[];
+  cifra: unknown;
   letra: string;
   videoId?: string | null;
 }) {
   const [tab, setTab] = useState<ReadTab>("cifra");
+  const [semitones, setSemitones] = useState(0);
+
+  const cifraLines = useMemo(
+    () => cifraViewLines(transposeCifra(cifra, semitones)),
+    [cifra, semitones],
+  );
 
   return (
     <div>
@@ -62,7 +69,15 @@ export function SongReadTabs({
         ) : null}
       </div>
       {tab === "cifra" ? (
-        <CifraView lines={cifraLines} />
+        <CifraView
+          lines={cifraLines}
+          tom={{
+            semitones,
+            onLower: () => setSemitones((value) => value - 1),
+            onRaise: () => setSemitones((value) => value + 1),
+            onReset: () => setSemitones(0),
+          }}
+        />
       ) : tab === "letra" ? (
         <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
           {letra || "Sem letra derivada desta Cifra."}
