@@ -173,6 +173,27 @@ function pdfScn(hex: string): string {
   return `${channels.join(" ")} scn`;
 }
 
+function pdfFontSizes(content: string): number[] {
+  return [...content.matchAll(/([\d.]+) Tf/g)].map((match) =>
+    Number.parseFloat(match[1] ?? "0"),
+  );
+}
+
+test("default Trecho slides stay 55pt and centered", async () => {
+  const { pages } = await renderSlides([
+    {
+      kind: "lyric",
+      text: "Reunidos aqui\nSó pra louvar ao Senhor,\nNovamente aqui,\nEm união.",
+    },
+  ]);
+
+  const sizes = pdfFontSizes(pages[0]?.content ?? "").filter((size) => size > 0);
+  expect(sizes.length).toBeGreaterThan(0);
+  expect(new Set(sizes)).toEqual(new Set([55]));
+  expect(pages[0]?.text).toContain("Reunidos aqui");
+  expect(pages[0]?.text).toContain("Em união.");
+});
+
 test("default pages use Cardo colors and embed the Cardo font", async () => {
   const { buffer, pages } = await renderSlides([
     { kind: "opening", communityName: "COMU JOVEM", subtitle: "Culto 09/08" },

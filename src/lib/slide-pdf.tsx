@@ -52,13 +52,17 @@ function pdfStyles(theme: SlideTheme) {
       textTransform: theme.titleTransform,
     },
     lyric: {
-      width: "100%",
       fontSize: theme.lyricSize,
       fontFamily: theme.fontFamily,
       fontWeight: 400,
       color: theme.text,
       textAlign: "center",
       lineHeight: 1.4,
+      maxWidth: "100%",
+    },
+    lyricBlock: {
+      width: "100%",
+      alignItems: "center",
     },
     chip: {
       backgroundColor: theme.chipBackground,
@@ -113,7 +117,15 @@ function SlidePage({
         </Chip>
       );
     case "lyric":
-      return <Text style={styles.lyric}>{slide.text}</Text>;
+      return (
+        <View style={styles.lyricBlock}>
+          {slide.text.split("\n").map((line, lineIndex) => (
+            <Text key={lineIndex} style={styles.lyric}>
+              {line.length > 0 ? line : " "}
+            </Text>
+          ))}
+        </View>
+      );
     case "blank":
       return null;
   }
