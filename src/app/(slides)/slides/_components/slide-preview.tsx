@@ -82,7 +82,7 @@ export function SlidePreview({
           ) : null}
           {slide.kind === "lyric" ? (
             <p
-              className="whitespace-pre-wrap text-[5.7cqw] leading-[1.4]"
+              className="w-full whitespace-pre-wrap text-center text-[5.729cqw] leading-[1.4]"
               style={{ fontFamily: bodyFont }}
             >
               {slide.text}
