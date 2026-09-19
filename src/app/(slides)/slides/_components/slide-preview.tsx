@@ -1,33 +1,100 @@
 import type { Slide } from "~/lib/slides";
+import {
+  DEFAULT_SLIDE_THEME_ID,
+  getSlideTheme,
+  type SlideThemeId,
+} from "~/lib/slide-theme";
+import { cn } from "~/lib/utils";
 
-export function SlidePreview({ slides }: { slides: Slide[] }) {
+export function SlidePreview({
+  slides,
+  themeId = DEFAULT_SLIDE_THEME_ID,
+}: {
+  slides: Slide[];
+  themeId?: SlideThemeId;
+}) {
+  const theme = getSlideTheme(themeId);
+
   if (slides.length === 0) {
     return <p className="text-muted-foreground">Nenhum slide ainda.</p>;
   }
+
+  const titleFont =
+    theme.id === "cardo"
+      ? "var(--font-slide-cardo), Cardo, serif"
+      : "var(--font-slide-montserrat), Montserrat, sans-serif";
+  const bodyFont =
+    theme.id === "cardo"
+      ? "var(--font-slide-cardo), Cardo, serif"
+      : "var(--font-slide-montserrat), Montserrat, sans-serif";
 
   return (
     <ul className="grid list-none gap-3 sm:grid-cols-2">
       {slides.map((slide, index) => (
         <li
           key={`${slide.kind}-${index}`}
-          className="flex aspect-video flex-col justify-center rounded-[10px] border border-line bg-paper p-4 text-center"
+          className="@container flex aspect-video flex-col items-center justify-center overflow-hidden rounded-[10px] border border-line p-[8cqw] text-center"
+          style={{ background: theme.background, color: theme.text }}
         >
           {slide.kind === "opening" ? (
             <>
-              <p className="text-lg font-semibold">{slide.communityName}</p>
+              <p
+                className={cn(
+                  "max-w-[90%] text-[7.8cqw] leading-none text-balance",
+                  theme.titleTransform === "uppercase" && "uppercase",
+                  theme.chip && "rounded-full px-[4cqw] py-[1.6cqw]",
+                )}
+                style={{
+                  fontFamily: titleFont,
+                  fontWeight: theme.titleFontWeight,
+                  color: theme.chip ? theme.muted : theme.text,
+                  background: theme.chip ? theme.chipBackground : undefined,
+                }}
+              >
+                {slide.communityName}
+              </p>
               {slide.subtitle ? (
-                <p className="text-sm text-muted-foreground">{slide.subtitle}</p>
+                <p
+                  className="mt-[2cqw] text-[2.9cqw] leading-snug"
+                  style={{ fontFamily: bodyFont, color: theme.muted }}
+                >
+                  {slide.subtitle}
+                </p>
               ) : null}
             </>
           ) : null}
           {slide.kind === "titleChip" ? (
-            <p className="text-lg font-semibold">{slide.title}</p>
+            <p
+              className={cn(
+                "max-w-[90%] text-[7.3cqw] leading-none text-balance",
+                theme.titleTransform === "uppercase" && "uppercase",
+                theme.chip && "rounded-full px-[4cqw] py-[1.6cqw]",
+              )}
+              style={{
+                fontFamily: titleFont,
+                fontWeight: theme.titleFontWeight,
+                color: theme.chip ? theme.muted : theme.text,
+                background: theme.chip ? theme.chipBackground : undefined,
+              }}
+            >
+              {slide.title}
+            </p>
           ) : null}
           {slide.kind === "lyric" ? (
-            <p className="whitespace-pre-wrap text-sm">{slide.text}</p>
+            <p
+              className="whitespace-pre-wrap text-[5.7cqw] leading-[1.4]"
+              style={{ fontFamily: bodyFont }}
+            >
+              {slide.text}
+            </p>
           ) : null}
           {slide.kind === "blank" ? (
-            <p className="text-sm text-muted-foreground">Reservado para preencher depois</p>
+            <p
+              className="text-[2.6cqw] opacity-70"
+              style={{ fontFamily: bodyFont }}
+            >
+              Reservado para preencher depois
+            </p>
           ) : null}
         </li>
       ))}
