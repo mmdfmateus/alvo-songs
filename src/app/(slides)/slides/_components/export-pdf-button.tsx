@@ -3,6 +3,10 @@
 import { createElement, useState } from "react";
 
 import type { Slide } from "~/lib/slides";
+import {
+  DEFAULT_SLIDE_THEME_ID,
+  type SlideThemeId,
+} from "~/lib/slide-theme";
 
 function pdfFilename(programName: string): string {
   const base = programName
@@ -16,7 +20,8 @@ export function ExportPdfHint() {
   return (
     <p className="text-sm text-muted-foreground">
       Depois de baixar, envie o PDF no Canva (computador) para colocar imagens
-      nos slides em branco de Recados, compartilhar ou guardar.
+      nos slides em branco de Recados, compartilhar ou guardar. As fontes, cores
+      e tamanhos do estilo escolhido vão junto no arquivo.
     </p>
   );
 }
@@ -24,11 +29,13 @@ export function ExportPdfHint() {
 export function ExportPdfButton({
   slides,
   programName,
+  themeId = DEFAULT_SLIDE_THEME_ID,
   disabled = false,
   showHint = true,
 }: {
   slides: Slide[];
   programName: string;
+  themeId?: SlideThemeId;
   disabled?: boolean;
   showHint?: boolean;
 }) {
@@ -44,7 +51,9 @@ export function ExportPdfButton({
         import("~/lib/slide-pdf"),
       ]);
       const blob = await pdf(
-        createElement(ProgramPdf, { slides }) as Parameters<typeof pdf>[0],
+        createElement(ProgramPdf, { slides, themeId }) as Parameters<
+          typeof pdf
+        >[0],
       ).toBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");

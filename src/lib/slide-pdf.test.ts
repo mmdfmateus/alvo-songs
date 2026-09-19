@@ -3,26 +3,34 @@ import { Document, renderToBuffer } from "@react-pdf/renderer";
 import {
   decodePDFRawStream,
   PDFArray,
+  PDFDict,
   PDFDocument,
+  PDFName,
   PDFRawStream,
   PDFStream,
 } from "pdf-lib";
 import { expect, test } from "vitest";
 
 import { ProgramPdf } from "~/lib/slide-pdf";
+import type { SlideThemeId } from "~/lib/slide-theme";
 import type { Slide } from "~/lib/slides";
 
 type PdfRoot = ReactElement<ComponentProps<typeof Document>>;
 
-async function renderSlides(slides: Slide[]) {
+async function renderSlides(slides: Slide[], themeId?: SlideThemeId) {
   const buffer = await renderToBuffer(
-    createElement(ProgramPdf, { slides }) as PdfRoot,
+    createElement(ProgramPdf, { slides, themeId }) as PdfRoot,
   );
   const pdf = await PDFDocument.load(buffer);
   const pages = pdf.getPages().map((page) => {
     const { width, height } = page.getSize();
     const content = pageContent(page);
-    return { width, height, content, text: pdfShownText(content) };
+    return {
+      width,
+      height,
+      content,
+      text: pdfShownText(content, pageToUnicode(page)),
+    };
   });
   return { buffer, pages };
 }
@@ -48,13 +56,98 @@ function pageContent(page: ReturnType<PDFDocument["getPages"]>[number]): string 
   return chunks.join("");
 }
 
-function pdfShownText(content: string): string {
+function utf16Be(hex: string): string {
+  let text = "";
+  for (let i = 0; i < hex.length; i += 4) {
+    text += String.fromCharCode(Number.parseInt(hex.slice(i, i + 4), 16));
+  }
+  return text;
+}
+
+function applyCmap(cmap: string, map: Map<number, string>) {
+  for (const block of cmap.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+    for (const pair of block[1]?.matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g) ??
+      []) {
+      if (!pair[1] || !pair[2]) continue;
+      map.set(Number.parseInt(pair[1], 16), utf16Be(pair[2]));
+    }
+  }
+  for (const block of cmap.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
+    const body = block[1] ?? "";
+    for (const range of body.matchAll(
+      /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g,
+    )) {
+      if (!range[1] || !range[2] || !range[3]) continue;
+      const start = Number.parseInt(range[1], 16);
+      const end = Number.parseInt(range[2], 16);
+      let code = Number.parseInt(range[3], 16);
+      for (let i = start; i <= end; i += 1) {
+        map.set(i, String.fromCharCode(code));
+        code += 1;
+      }
+    }
+    for (const range of body.matchAll(
+      /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*\[([^\]]+)\]/g,
+    )) {
+      if (!range[1] || !range[3]) continue;
+      const start = Number.parseInt(range[1], 16);
+      const dests = [...range[3].matchAll(/<([0-9A-Fa-f]+)>/g)];
+      dests.forEach((dest, index) => {
+        if (!dest[1]) return;
+        map.set(start + index, utf16Be(dest[1]));
+      });
+    }
+  }
+}
+
+function pageToUnicode(
+  page: ReturnType<PDFDocument["getPages"]>[number],
+): Map<number, string> {
+  const map = new Map<number, string>();
+  const resources = page.node.Resources();
+  const fonts = resources?.lookup(PDFName.of("Font"));
+  if (!(fonts instanceof PDFDict)) return map;
+
+  for (const key of fonts.keys()) {
+    const font = fonts.lookup(key);
+    if (!(font instanceof PDFDict)) continue;
+    const unicode = font.get(PDFName.of("ToUnicode"));
+    if (!unicode) continue;
+    const stream =
+      unicode instanceof PDFStream ? unicode : page.doc.context.lookup(unicode);
+    if (!(stream instanceof PDFStream)) continue;
+    const bytes =
+      stream instanceof PDFRawStream
+        ? decodePDFRawStream(stream).decode()
+        : stream.getContents();
+    applyCmap(Buffer.from(bytes).toString("latin1"), map);
+  }
+  return map;
+}
+
+function decodePdfHex(hex: string, toUnicode: Map<number, string>): string {
+  if (toUnicode.size > 0) {
+    const width = hex.length % 4 === 0 ? 4 : 2;
+    let text = "";
+    for (let i = 0; i < hex.length; i += width) {
+      const code = Number.parseInt(hex.slice(i, i + width), 16);
+      text += toUnicode.get(code) ?? "";
+    }
+    return text;
+  }
+  if (hex.length % 4 === 0 && /^(?:00[0-9A-Fa-f]{2})+$/.test(hex)) {
+    return utf16Be(hex);
+  }
+  return Buffer.from(hex, "hex").toString("latin1");
+}
+
+function pdfShownText(content: string, toUnicode: Map<number, string>): string {
   const parts: string[] = [];
   for (const match of content.matchAll(/\((?:\\.|[^\\)])*\)|<([0-9A-Fa-f]+)>/g)) {
     if (match[1]) {
       const hex = match[1];
       if (hex.length % 2 !== 0) continue;
-      parts.push(Buffer.from(hex, "hex").toString("latin1"));
+      parts.push(decodePdfHex(hex, toUnicode));
       continue;
     }
     const raw = match[0].slice(1, -1);
@@ -72,22 +165,40 @@ function pdfShownText(content: string): string {
   return parts.join("");
 }
 
-test("pages match the website preview: white background and dark text", async () => {
-  const { pages } = await renderSlides([
+function pdfScn(hex: string): string {
+  const n = hex.replace("#", "");
+  const channels = [0, 2, 4].map(
+    (offset) => Number.parseInt(n.slice(offset, offset + 2), 16) / 255,
+  );
+  return `${channels.join(" ")} scn`;
+}
+
+test("default pages use Cardo colors and embed the Cardo font", async () => {
+  const { buffer, pages } = await renderSlides([
     { kind: "opening", communityName: "COMU JOVEM", subtitle: "Culto 09/08" },
     { kind: "lyric", text: "Na cidade" },
   ]);
 
+  expect(buffer.toString("latin1")).toContain("Cardo");
   for (const page of pages) {
-    expect(page.content).toContain("1 1 1 scn");
-    expect(page.content).toContain(
-      "0.0784313725490196 0.0784313725490196 0.0784313725490196 scn",
-    );
+    expect(page.content).toContain(pdfScn("#F1F0F0"));
+    expect(page.content).toContain(pdfScn("#343434"));
   }
+});
 
-  expect(pages[0]?.content).toContain(
-    "0.4196078431372549 0.4196078431372549 0.4196078431372549 scn",
+test("COMU pages use orange, white, and Montserrat", async () => {
+  const { buffer, pages } = await renderSlides(
+    [
+      { kind: "titleChip", title: "Reunidos Aqui" },
+      { kind: "lyric", text: "Na cidade" },
+    ],
+    "comu",
   );
+
+  expect(buffer.toString("latin1")).toContain("Montserrat");
+  expect(pages[0]?.content).toContain(pdfScn("#ED821C"));
+  expect(pages[0]?.content).toContain(pdfScn("#441F8D"));
+  expect(pages[1]?.content).toContain(pdfScn("#FFFFFF"));
 });
 
 test("Export PDF is 16:9 with one page per Slide", async () => {

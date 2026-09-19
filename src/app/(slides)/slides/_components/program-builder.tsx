@@ -9,6 +9,10 @@ import {
   ExportPdfHint,
 } from "~/app/(slides)/slides/_components/export-pdf-button";
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
+import {
+  SlideThemePicker,
+  useSlideTheme,
+} from "~/app/(slides)/slides/_components/slide-theme-picker";
 import { removeMyProgram, renameMyProgram } from "~/lib/my-programs";
 import {
   createProgramAutosave,
@@ -342,6 +346,7 @@ export function ProgramBuilder({
     null,
   );
   const library = api.song.list.useQuery();
+  const { themeId, chooseTheme } = useSlideTheme(program.id);
   const { slides, songsFetched } = useLivePreviewSlides(
     sections,
     library.data ?? [],
@@ -452,6 +457,7 @@ export function ProgramBuilder({
           <ExportPdfButton
             slides={slides}
             programName={name}
+            themeId={themeId}
             disabled={!songsFetched}
             showHint={false}
           />
@@ -706,11 +712,14 @@ export function ProgramBuilder({
       </form>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold">Prévia</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold">Prévia</h2>
+          <SlideThemePicker value={themeId} onChange={chooseTheme} />
+        </div>
         <div className="mb-6">
           <ExportPdfHint />
         </div>
-        <SlidePreview slides={slides} />
+        <SlidePreview slides={slides} themeId={themeId} />
       </section>
     </div>
   );
