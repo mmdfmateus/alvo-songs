@@ -62,7 +62,7 @@ export function SongReadTabs({
         ) : null}
       </div>
       {tab === "cifra" ? (
-        <CifraView lines={cifraLines} />
+        <CifraView lines={cifraLines} interactiveChords />
       ) : tab === "letra" ? (
         <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
           {letra || "Sem letra derivada desta Cifra."}

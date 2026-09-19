@@ -44,9 +44,12 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.15",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^20.14.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "jsdom": "^30.0.1",
     "pdf-lib": "^1.17.1",
     "postcss": "^8.5.3",
     "prisma": "^6.6.0",
