@@ -1,6 +1,6 @@
 # Prisma data model for library + Programs
 
-V1 persists the locked glossary on Neon Postgres (ADR 0003): Auth.js adapter tables plus `User.isEditor` (ADR 0002); Artist optional on Song; Cifra as ChordSheetJS serializer JSON (Letra is not stored); Trechos as their own rows, independent after seed (ADR 0005); Programs unlisted with cookie ownership (ADR 0001) via `ownerTokenHash` — no Program↔User FK; Song sections store only a live `songId` (ADR 0004). `Section.songId` is **not** a foreign key so deleting a Song leaves a dangling id for broken-ref UI (Restrict would block library cleanup; Cascade would silently edit other people’s Programs; SetNull forgets which Song died). Artist delete SetNulls `Song.artistId`. Rejected: Playlists, a Letra column, jsonb Trechos, snapshot fields on Song sections, Program slugs, `sourceNumber`, a Postgres enum for section type, and tying Programs to Google accounts.
+V1 persists the locked glossary on Neon Postgres (ADR 0003): Auth.js adapter tables plus `User.isEditor` and `User.isAdmin` (ADR 0002); Artist optional on Song; Cifra as ChordSheetJS serializer JSON (Letra is not stored); Trechos as their own rows, independent after seed (ADR 0005); Programs unlisted with cookie ownership (ADR 0001) via `ownerTokenHash` — no Program↔User FK; Song sections store only a live `songId` (ADR 0004). `Section.songId` is **not** a foreign key so deleting a Song leaves a dangling id for broken-ref UI (Restrict would block library cleanup; Cascade would silently edit other people’s Programs; SetNull forgets which Song died). Artist delete SetNulls `Song.artistId`. Rejected: Playlists, a Letra column, jsonb Trechos, snapshot fields on Song sections, Program slugs, `sourceNumber`, a Postgres enum for section type, and tying Programs to Google accounts.
 
 Enable the `citext` extension so `Artist.name` is unique case-insensitively. Domain ids are uuid (Program uuid is the public view URL); Auth.js ids stay cuid. Meus slides is device-local storage, not a DB query. Cookie holds the owner secret; DB stores only its hash.
 
@@ -49,6 +49,7 @@ model User {
   emailVerified DateTime?
   image         String?
   isEditor      Boolean   @default(false)
+  isAdmin       Boolean   @default(false)
   accounts      Account[]
   sessions      Session[]
 }

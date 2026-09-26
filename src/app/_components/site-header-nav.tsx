@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { MenuIcon, PlusIcon, Presentation } from "lucide-react";
 
 import {
+  adminNavLinks,
   bibliotecaBrowseLinks,
   bibliotecaCreateLinks,
   bibliotecaReviewLink,
@@ -51,11 +52,13 @@ export function SiteHeaderNav({
   mode,
   signedIn,
   isEditor,
+  isAdmin,
   user,
 }: {
   mode: "biblioteca" | "slides";
   signedIn: boolean;
   isEditor: boolean;
+  isAdmin: boolean;
   user: HeaderUser | null;
 }) {
   const pathname = usePathname();
@@ -67,11 +70,13 @@ export function SiteHeaderNav({
       ? [...bibliotecaBrowseLinks, bibliotecaReviewLink]
       : bibliotecaBrowseLinks;
   const createLinks = !onSlides && isEditor ? bibliotecaCreateLinks : [];
+  const usersLinks = adminNavLinks(isAdmin);
   const showReview = !onSlides && isEditor;
   const activeHrefs = [
     ...desktopBrowseLinks,
     ...(showReview ? [bibliotecaReviewLink] : []),
     ...createLinks,
+    ...usersLinks,
   ].map((link) => link.href);
 
   return (
@@ -124,9 +129,17 @@ export function SiteHeaderNav({
 
         <div className="flex shrink-0 items-center gap-1 md:justify-self-end md:gap-2">
           <div className="hidden items-center gap-1 md:flex">
+            {usersLinks.map((link) => (
+              <HeaderActionLink
+                key={link.href}
+                link={link}
+                active={isNavActive(pathname, link.href, activeHrefs)}
+              />
+            ))}
             {createLinks.length > 0 ? <NovoMenu createLinks={createLinks} /> : null}
             {showReview ? (
-              <ReviewLink
+              <HeaderActionLink
+                link={bibliotecaReviewLink}
                 active={isNavActive(
                   pathname,
                   bibliotecaReviewLink.href,
@@ -178,6 +191,18 @@ export function SiteHeaderNav({
                 {mobileBrowseLinks.length > 0 ? (
                   <nav aria-label="Biblioteca" className="flex flex-col gap-1">
                     {mobileBrowseLinks.map((link) => (
+                      <MobileNavLink
+                        key={link.href}
+                        link={link}
+                        active={isNavActive(pathname, link.href, activeHrefs)}
+                      />
+                    ))}
+                  </nav>
+                ) : null}
+
+                {usersLinks.length > 0 ? (
+                  <nav aria-label="Usuários" className="flex flex-col gap-1">
+                    {usersLinks.map((link) => (
                       <MobileNavLink
                         key={link.href}
                         link={link}
@@ -241,10 +266,16 @@ function DesktopNavLink({
   );
 }
 
-function ReviewLink({ active }: { active: boolean }) {
+function HeaderActionLink({
+  link,
+  active,
+}: {
+  link: NavLink;
+  active: boolean;
+}) {
   return (
     <Link
-      href={bibliotecaReviewLink.href}
+      href={link.href}
       className={cn(
         buttonVariants({
           variant: active ? "secondary" : "ghost",
@@ -254,7 +285,7 @@ function ReviewLink({ active }: { active: boolean }) {
       )}
       aria-current={active ? "page" : undefined}
     >
-      {bibliotecaReviewLink.label}
+      {link.label}
     </Link>
   );
 }

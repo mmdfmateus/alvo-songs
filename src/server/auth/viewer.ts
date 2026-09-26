@@ -8,6 +8,7 @@ export type ViewerUser = {
 export type Viewer = {
   signedIn: boolean;
   isEditor: boolean;
+  isAdmin: boolean;
   user: ViewerUser | null;
 };
 
@@ -15,8 +16,8 @@ export type ViewerDb = {
   user: {
     findUnique: (args: {
       where: { id: string };
-      select: { isEditor: true };
-    }) => Promise<{ isEditor: boolean } | null>;
+      select: { isEditor?: true; isAdmin?: true };
+    }) => Promise<{ isEditor?: boolean; isAdmin?: boolean } | null>;
   };
 };
 
@@ -35,17 +36,47 @@ export async function loadIsEditor(
   return user?.isEditor ?? false;
 }
 
+/**
+ * Live Admin check. Re-reads `User.isAdmin` from the DB so a demotion applies
+ * without waiting for re-login (ADR 0002).
+ */
+export async function loadIsAdmin(
+  db: ViewerDb,
+  userId: string,
+): Promise<boolean> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { isAdmin: true },
+  });
+  return user?.isAdmin ?? false;
+}
+
+async function loadUserFlags(
+  db: ViewerDb,
+  userId: string,
+): Promise<{ isEditor: boolean; isAdmin: boolean }> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { isEditor: true, isAdmin: true },
+  });
+  return {
+    isEditor: user?.isEditor ?? false,
+    isAdmin: user?.isAdmin ?? false,
+  };
+}
+
 export async function resolveViewer(
   db: ViewerDb,
   session: Session | null,
 ): Promise<Viewer> {
   if (!session?.user?.id) {
-    return { signedIn: false, isEditor: false, user: null };
+    return { signedIn: false, isEditor: false, isAdmin: false, user: null };
   }
 
+  const flags = await loadUserFlags(db, session.user.id);
   return {
     signedIn: true,
-    isEditor: await loadIsEditor(db, session.user.id),
+    ...flags,
     user: {
       name: session.user.name ?? null,
       image: session.user.image ?? null,

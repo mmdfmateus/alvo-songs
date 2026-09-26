@@ -13,6 +13,7 @@ export async function SiteHeader({
       mode={mode}
       signedIn={viewer.signedIn}
       isEditor={viewer.isEditor}
+      isAdmin={viewer.isAdmin}
       user={viewer.user}
     />
   );
