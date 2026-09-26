@@ -11,6 +11,12 @@ import {
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
 import { SongTrechosField } from "~/app/(slides)/slides/_components/song-trechos-field";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
+import {
   SlideThemePicker,
   useSlideTheme,
 } from "~/app/(slides)/slides/_components/slide-theme-picker";
@@ -281,13 +287,30 @@ function SongPicker({
           >
             {trechosOpen ? "Fechar trechos" : "Editar trechos"}
           </button>
-          {trechosOpen ? (
-            <SongTrechosField
-              key={songId}
-              songId={songId}
-              chunks={detail.data.chunks}
-            />
-          ) : null}
+          <Sheet
+            open={trechosOpen}
+            onOpenChange={(next) => {
+              if (!next) setOpenSongId(null);
+            }}
+          >
+            <SheetContent
+              side="right"
+              className="w-full overflow-y-auto bg-paper text-ink sm:max-w-xl"
+            >
+              <SheetHeader className="pr-10">
+                <SheetTitle className="text-ink">{detail.data.title}</SheetTitle>
+              </SheetHeader>
+              {trechosOpen ? (
+                <div className="px-4 pb-6">
+                  <SongTrechosField
+                    key={songId}
+                    songId={songId}
+                    chunks={detail.data.chunks}
+                  />
+                </div>
+              ) : null}
+            </SheetContent>
+          </Sheet>
         </>
       ) : null}
     </div>
