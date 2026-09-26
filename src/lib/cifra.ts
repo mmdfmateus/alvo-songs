@@ -69,3 +69,18 @@ export function seedLyricChunks(letra: string): string[] {
 
   return paragraphs;
 }
+
+/** First-seen unique chord names in the current Cifra reading. */
+export function uniqueDisplayedChords(lines: CifraViewLine[]): string[] {
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (const line of lines) {
+    for (const part of line.parts) {
+      const name = part.chords.trim();
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      names.push(name);
+    }
+  }
+  return names;
+}
