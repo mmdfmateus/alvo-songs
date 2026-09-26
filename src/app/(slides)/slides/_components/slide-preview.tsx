@@ -41,7 +41,7 @@ export function SlidePreview({
       {slides.map((slide, index) => (
         <li
           key={`${slide.kind}-${index}`}
-          className="@container relative flex aspect-video flex-col items-center justify-center overflow-hidden rounded-[10px] border border-line p-[8cqw] text-center"
+          className="relative min-h-0 overflow-hidden rounded-[10px] border border-line"
           style={{ background: theme.background, color: theme.text }}
         >
           {onEditSong && songIds?.[index] ? (
@@ -50,7 +50,7 @@ export function SlidePreview({
               aria-label="Editar trechos"
               title="Editar trechos"
               aria-expanded={editingSongId === songIds[index]}
-              className="absolute top-2 right-2 z-10 rounded-md p-1.5 hover:bg-black/10"
+              className="absolute top-2 right-2 rounded-md p-1.5 hover:bg-black/10"
               style={{ color: theme.text }}
               onClick={() => {
                 const songId = songIds[index];
@@ -60,6 +60,7 @@ export function SlidePreview({
               <Pencil className="size-4" />
             </button>
           ) : null}
+          <div className="@container flex aspect-video min-h-0 flex-col items-center justify-center overflow-hidden p-[8cqw] text-center">
           {slide.kind === "opening" ? (
             <>
               <p
@@ -120,6 +121,7 @@ export function SlidePreview({
               Reservado para preencher depois
             </p>
           ) : null}
+          </div>
         </li>
       ))}
     </ul>
