@@ -81,7 +81,7 @@ export function SongReadTabs({
           onRaise: () => setSemitones((value) => value + 1),
           onReset: () => setSemitones(0),
         }}
-        sheet={<CifraView lines={cifraLines} />}
+        sheet={<CifraView lines={cifraLines} interactiveChords />}
       />
     );
   } else {
