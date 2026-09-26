@@ -13,13 +13,14 @@ export function testCaller(opts?: {
   userId?: string;
   name?: string;
   email?: string;
+  keepStoredFlags?: boolean;
 }): { db: FakeDb; caller: Caller } {
   const userId = opts?.userId ?? "user-1";
   const signedIn = opts?.signedIn ?? true;
   const name = opts?.name ?? "Ada";
   const email = opts?.email ?? "ada@example.com";
   const db = opts?.db ?? createFakeDb();
-  if (signedIn) {
+  if (signedIn && !opts?.keepStoredFlags) {
     db.upsertUser({
       id: userId,
       isEditor: opts?.isEditor ?? false,

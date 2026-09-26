@@ -16,7 +16,7 @@ pnpm db:seed   # livrinho → ~110 Songs (Artist unset; flagged rows in Revisar)
 pnpm dev
 ```
 
-Any Google account may sign in. Flip `User.isEditor` in the database for editor chrome — there is no promote UI. `User.isAdmin` is a separate flag; an Admin can open Usuários and see who has signed in. Mutate and Admin checks re-read the flags on every call.
+Any Google account may sign in. `User.isAdmin` is a separate flag from `User.isEditor`. An Admin can open Usuários, see who has signed in, and set or unset Editor. There is no way to appoint another Admin from the site. Mutate and Admin checks re-read the flags on every call.
 
 ### Google login on Vercel Preview
 

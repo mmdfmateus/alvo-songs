@@ -173,6 +173,44 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
           isEditor,
         }));
       },
+      findFirst: async ({
+        where,
+      }: {
+        where: {
+          id: string;
+          accounts?: { some?: { provider?: string } };
+        };
+      }) => {
+        const user = users.get(where.id);
+        if (!user) return null;
+        const provider = where.accounts?.some?.provider;
+        if (
+          provider &&
+          !accounts.some(
+            (account) =>
+              account.userId === user.id && account.provider === provider,
+          )
+        ) {
+          return null;
+        }
+        return { id: user.id };
+      },
+      update: async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: { isEditor: boolean };
+      }) => {
+        const user = users.get(where.id);
+        if (!user) throw new Error(`User ${where.id} not found`);
+        user.isEditor = data.isEditor;
+        return {
+          id: user.id,
+          isEditor: user.isEditor,
+          isAdmin: user.isAdmin,
+        };
+      },
     },
     artist: {
       findMany: async () =>

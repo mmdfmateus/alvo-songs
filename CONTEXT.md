@@ -95,6 +95,6 @@ _UI_: editor / editores (copy, not a nav item)
 _Avoid_: Role, operator, User (as the name of this concept); storing Editor as an RBAC role or separate Editor entity; using Editor for who may edit a Program; treating any Google sign-in as Editor rights; treating Admin as Editor
 
 **Admin**:
-A signed-in Google user marked as an Admin on their account; the only person who may see the list of Users who have signed in. Admin does not grant Song or Artist editing. Not an RBAC role.
-_UI_: administrador (copy). The list page is Usuários, linked only for an Admin.
-_Avoid_: Role; storing Admin as a separate entity; treating Admin as Editor; a promote UI; invite-by-email; listing accounts that have never signed in
+A signed-in Google user marked as an Admin on their account; the only person who may see the list of Users who have signed in and set or unset Editor on those accounts. Admin does not grant Song or Artist editing. Not an RBAC role.
+_UI_: administrador (copy). The list page is Usuários, linked only for an Admin. Editor actions are Tornar editor and Remover editor.
+_Avoid_: Role; storing Admin as a separate entity; treating Admin as Editor; appointing another Admin from the site; invite-by-email; listing accounts that have never signed in

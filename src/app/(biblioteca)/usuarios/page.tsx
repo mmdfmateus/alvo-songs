@@ -1,3 +1,4 @@
+import { EditorToggle } from "~/app/(biblioteca)/usuarios/_components/editor-toggle";
 import { api } from "~/trpc/server";
 
 export default async function UsersPage() {
@@ -36,7 +37,9 @@ export default async function UsersPage() {
                 <tr key={user.id} className="border-b border-line last:border-0">
                   <td className="px-4 py-3">{user.name ?? "—"}</td>
                   <td className="px-4 py-3">{user.email ?? "—"}</td>
-                  <td className="px-4 py-3">{user.isEditor ? "Sim" : "Não"}</td>
+                  <td className="px-4 py-3">
+                    <EditorToggle userId={user.id} isEditor={user.isEditor} />
+                  </td>
                 </tr>
               ))}
             </tbody>
