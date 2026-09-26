@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
-import type { CifraViewLine } from "~/lib/cifra";
+import { UniqueChordStrip } from "~/app/(biblioteca)/musicas/_components/unique-chord-strip";
+import { uniqueDisplayedChords, type CifraViewLine } from "~/lib/cifra";
 
 type ReadTab = "cifra" | "letra" | "listen";
 
@@ -62,7 +63,10 @@ export function SongReadTabs({
         ) : null}
       </div>
       {tab === "cifra" ? (
-        <CifraView lines={cifraLines} />
+        <>
+          <UniqueChordStrip names={uniqueDisplayedChords(cifraLines)} />
+          <CifraView lines={cifraLines} />
+        </>
       ) : tab === "letra" ? (
         <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
           {letra || "Sem letra derivada desta Cifra."}
