@@ -242,6 +242,8 @@ function SongPicker({
   );
   const missingFromLibrary =
     Boolean(songId) && detail.isFetched && detail.data === null;
+  const [openSongId, setOpenSongId] = useState<string | null>(null);
+  const trechosOpen = Boolean(songId) && openSongId === songId;
 
   return (
     <div className="flex flex-col gap-2">
@@ -270,11 +272,23 @@ function SongPicker({
         <p className="text-sm text-muted-foreground">Escolha uma música da Biblioteca.</p>
       ) : null}
       {canEditTrechos && songId && detail.data ? (
-        <SongTrechosField
-          key={songId}
-          songId={songId}
-          chunks={detail.data.chunks}
-        />
+        <>
+          <button
+            type="button"
+            aria-expanded={trechosOpen}
+            className="self-start rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-[#fafafa]"
+            onClick={() => setOpenSongId(trechosOpen ? null : songId)}
+          >
+            {trechosOpen ? "Fechar trechos" : "Editar trechos"}
+          </button>
+          {trechosOpen ? (
+            <SongTrechosField
+              key={songId}
+              songId={songId}
+              chunks={detail.data.chunks}
+            />
+          ) : null}
+        </>
       ) : null}
     </div>
   );
