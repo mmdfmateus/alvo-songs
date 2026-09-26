@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 
-import { cifraToCow, parseCifra } from "~/lib/cifra-parse";
-import { deriveLetra, seedLyricChunks } from "~/lib/cifra";
+import { cifraToCow, parseCifra, transposeCifra } from "~/lib/cifra-parse";
+import { cifraViewLines, deriveLetra, seedLyricChunks } from "~/lib/cifra";
 
 const LET_IT_BE = `       Am         C/G        F          C
 Let it be, let it be, let it be, let it be
@@ -59,4 +59,56 @@ test("seedLyricChunks falls back to ~4-line chunks when there is one long paragr
 test("empty Letra seeds zero lyric chunks", () => {
   expect(seedLyricChunks("")).toEqual([]);
   expect(seedLyricChunks("   \n\n  ")).toEqual([]);
+});
+
+function namedChords(cifra: unknown) {
+  return cifraViewLines(cifra)
+    .flatMap((line) => line.parts.map((part) => part.chords.trim()))
+    .filter((chords) => chords.length > 0);
+}
+
+test("transposeCifra raises a sample Cifra two semitones without mutating the original JSON", () => {
+  const stored = parseCifra(LET_IT_BE);
+  const snapshot = JSON.stringify(stored);
+
+  const raised = transposeCifra(stored, 2);
+
+  expect(namedChords(raised)).toEqual([
+    "Bm",
+    "D/A",
+    "G",
+    "D",
+    "D",
+    "A",
+    "G",
+    "D/F#",
+    "Em",
+    "D",
+  ]);
+  expect(JSON.stringify(stored)).toBe(snapshot);
+  expect(namedChords(stored)).toEqual([
+    "Am",
+    "C/G",
+    "F",
+    "C",
+    "C",
+    "G",
+    "F",
+    "C/E",
+    "Dm",
+    "C",
+  ]);
+});
+
+test("transposeCifra reset (0) restores stored chord names", () => {
+  const stored = parseCifra(LET_IT_BE);
+  const raised = transposeCifra(stored, 2);
+
+  expect(namedChords(transposeCifra(stored, 0))).toEqual(namedChords(stored));
+  expect(namedChords(raised)).not.toEqual(namedChords(stored));
+});
+
+test("transposeCifra does not move Letra", () => {
+  const stored = parseCifra(LET_IT_BE);
+  expect(deriveLetra(transposeCifra(stored, 3))).toBe(deriveLetra(stored));
 });

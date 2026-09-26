@@ -13,6 +13,7 @@
     "dev": "next dev --turbo",
     "postinstall": "prisma generate",
     "preview": "next build && next start",
+    "prototype:cifra-reading-tools": "next dev --turbo",
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
