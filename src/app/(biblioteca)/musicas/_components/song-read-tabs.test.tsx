@@ -10,7 +10,7 @@ Let it be, let it be, let it be, let it be`;
 
 const storedLetra = "Let it be, let it be, let it be, let it be";
 
-test("Cifra tab shows PT-BR Tom controls and stored chord names", () => {
+test("Cifra tab hides Tom controls behind a disclosure and shows a stored-chord hint", () => {
   const html = renderToStaticMarkup(
     createElement(SongReadTabs, {
       cifra: parseCifra(LET_IT_BE),
@@ -18,6 +18,8 @@ test("Cifra tab shows PT-BR Tom controls and stored chord names", () => {
     }),
   );
 
+  expect(html).toContain("<details");
+  expect(html).not.toMatch(/<details[^>]*\sopen/);
   expect(html).toContain("Tom");
   expect(html).toContain("Diminuir tom");
   expect(html).toContain("Aumentar tom");

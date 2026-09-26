@@ -69,3 +69,17 @@ export function seedLyricChunks(letra: string): string[] {
 
   return paragraphs;
 }
+
+/**
+ * First chord name in the stored Cifra. Livrinho sheets have no key field;
+ * this is a reading hint, not an analysed tonal centre.
+ */
+export function storedTomHint(cifra: unknown): string | null {
+  for (const line of cifraViewLines(cifra)) {
+    for (const part of line.parts) {
+      const name = part.chords.trim();
+      if (name) return name;
+    }
+  }
+  return null;
+}
