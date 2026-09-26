@@ -67,7 +67,7 @@ export function PrototypeSwitcher({
         >
           ←
         </button>
-        <span className="min-w-[11rem] text-center text-xs font-semibold tracking-wide">
+        <span className="min-w-[13rem] text-center text-xs font-semibold tracking-wide">
           {label}
         </span>
         <button

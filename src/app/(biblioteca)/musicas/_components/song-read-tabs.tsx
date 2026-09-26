@@ -129,15 +129,10 @@ export function SongReadTabs({
     <div>
       {prototypeVariant === "B" ? (
         <VariantB tablist={tablist} lines={cifraLines} tom={tom} sheet={sheet} />
+      ) : prototypeVariant === "C" ? (
+        <VariantC tablist={tablist} lines={cifraLines} tom={tom} sheet={sheet} />
       ) : (
-        <>
-          <div className="mb-4">{tablist}</div>
-          {prototypeVariant === "C" ? (
-            <VariantC lines={cifraLines} tom={tom} sheet={sheet} />
-          ) : (
-            <VariantA lines={cifraLines} tom={tom} sheet={sheet} />
-          )}
-        </>
+        <VariantA tablist={tablist} lines={cifraLines} tom={tom} sheet={sheet} />
       )}
       <PrototypeSwitcher
         variants={["A", "B", "C"]}
