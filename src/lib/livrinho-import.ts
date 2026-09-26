@@ -3,7 +3,14 @@ import path from "node:path";
 
 import ChordSheetJS from "chordsheetjs";
 
-import { deriveLetra, isCifra, seedLyricChunks, type Cifra } from "~/lib/cifra";
+import {
+  cifraViewLines,
+  deriveLetra,
+  isCifra,
+  seedLyricChunks,
+  uniqueDisplayedChords,
+  type Cifra,
+} from "~/lib/cifra";
 
 export const LIVRINHO_MARKDOWN_PATH = path.join(
   process.cwd(),
@@ -124,14 +131,7 @@ export function unsyncedLivrinhoSongs(
 }
 
 export function uniqueCifraChords(cifra: Cifra): string[] {
-  const chords = new Set<string>();
-  for (const line of cifra.lines) {
-    for (const item of line.items) {
-      const token = item.chords?.trim();
-      if (token) chords.add(token);
-    }
-  }
-  return [...chords];
+  return uniqueDisplayedChords(cifraViewLines(cifra));
 }
 
 export function splitLivrinhoSongs(markdown: string): {
