@@ -51,6 +51,20 @@ export async function loadIsAdmin(
   return user?.isAdmin ?? false;
 }
 
+async function loadUserFlags(
+  db: ViewerDb,
+  userId: string,
+): Promise<{ isEditor: boolean; isAdmin: boolean }> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { isEditor: true, isAdmin: true },
+  });
+  return {
+    isEditor: user?.isEditor ?? false,
+    isAdmin: user?.isAdmin ?? false,
+  };
+}
+
 export async function resolveViewer(
   db: ViewerDb,
   session: Session | null,
@@ -59,10 +73,10 @@ export async function resolveViewer(
     return { signedIn: false, isEditor: false, isAdmin: false, user: null };
   }
 
+  const flags = await loadUserFlags(db, session.user.id);
   return {
     signedIn: true,
-    isEditor: await loadIsEditor(db, session.user.id),
-    isAdmin: await loadIsAdmin(db, session.user.id),
+    ...flags,
     user: {
       name: session.user.name ?? null,
       image: session.user.image ?? null,
