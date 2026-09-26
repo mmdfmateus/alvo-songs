@@ -2,7 +2,15 @@ import { randomUUID } from "node:crypto";
 
 import { songMatchesSearch } from "~/server/song-search";
 
-type UserRow = { id: string; isEditor: boolean };
+type UserRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  isEditor: boolean;
+  isAdmin: boolean;
+};
+
+type AccountRow = { userId: string; provider: string };
 
 type ArtistRow = {
   id: string;
@@ -73,6 +81,7 @@ function sortBy<T>(rows: T[], key: keyof T, locale = "pt-BR"): T[] {
 
 export function createFakeDb(opts?: { users?: UserRow[] }) {
   const users = new Map((opts?.users ?? []).map((user) => [user.id, user]));
+  const accounts: AccountRow[] = [];
   const artists = new Map<string, ArtistRow>();
   const songs = new Map<string, SongRow>();
   const chunks = new Map<string, ChunkRow>();
@@ -89,8 +98,25 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
   }
 
   const db = {
-    upsertUser(user: UserRow) {
-      users.set(user.id, user);
+    upsertUser(user: {
+      id: string;
+      isEditor: boolean;
+      isAdmin?: boolean;
+      name?: string | null;
+      email?: string | null;
+    }) {
+      const existing = users.get(user.id);
+      users.set(user.id, {
+        id: user.id,
+        name: user.name !== undefined ? user.name : (existing?.name ?? null),
+        email: user.email !== undefined ? user.email : (existing?.email ?? null),
+        isEditor: user.isEditor,
+        isAdmin:
+          user.isAdmin !== undefined ? user.isAdmin : (existing?.isAdmin ?? false),
+      });
+    },
+    linkGoogleAccount(userId: string) {
+      accounts.push({ userId, provider: "google" });
     },
     searchSongs: async (q: string) => {
       const hits = [...songs.values()].map((song) => {
@@ -121,10 +147,31 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
         where,
       }: {
         where: { id: string };
-        select?: { isEditor: true };
+        select?: { isEditor?: true; isAdmin?: true };
       }) => {
         const user = users.get(where.id);
-        return user ? { isEditor: user.isEditor } : null;
+        if (!user) return null;
+        return { isEditor: user.isEditor, isAdmin: user.isAdmin };
+      },
+      findMany: async ({
+        where,
+      }: {
+        where?: { accounts?: { some?: { provider?: string } } };
+      } = {}) => {
+        const provider = where?.accounts?.some?.provider;
+        const rows = [...users.values()].filter((user) => {
+          if (!provider) return true;
+          return accounts.some(
+            (account) =>
+              account.userId === user.id && account.provider === provider,
+          );
+        });
+        return sortBy(rows, "name").map(({ id, name, email, isEditor }) => ({
+          id,
+          name,
+          email,
+          isEditor,
+        }));
       },
     },
     artist: {
@@ -486,6 +533,7 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
         users: new Map(
           [...users.entries()].map(([id, row]) => [id, { ...row }]),
         ),
+        accounts: accounts.map((account) => ({ ...account })),
         artists: new Map(
           [...artists.entries()].map(([id, row]) => [id, { ...row }]),
         ),
@@ -506,12 +554,14 @@ export function createFakeDb(opts?: { users?: UserRow[] }) {
         return await fn(db);
       } catch (error) {
         users.clear();
+        accounts.length = 0;
         artists.clear();
         songs.clear();
         chunks.clear();
         programs.clear();
         sections.clear();
         for (const [id, row] of snapshot.users) users.set(id, row);
+        for (const account of snapshot.accounts) accounts.push(account);
         for (const [id, row] of snapshot.artists) artists.set(id, row);
         for (const [id, row] of snapshot.songs) songs.set(id, row);
         for (const [id, row] of snapshot.chunks) chunks.set(id, row);

@@ -18,6 +18,15 @@ export const bibliotecaReviewLink: NavLink = {
   label: "Revisar",
 };
 
+export const adminUsersLink: NavLink = {
+  href: "/usuarios",
+  label: "Usuários",
+};
+
+export function adminNavLinks(isAdmin: boolean): NavLink[] {
+  return isAdmin ? [adminUsersLink] : [];
+}
+
 export const bibliotecaEditorLinks: NavLink[] = [
   ...bibliotecaCreateLinks,
   bibliotecaReviewLink,

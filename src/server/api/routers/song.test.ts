@@ -98,6 +98,38 @@ test("zero lyric chunks are allowed when Letra is empty", async () => {
   expect(detail?.chunks).toEqual([]);
 });
 
+test("admin who is not an editor cannot create or edit a Song", async () => {
+  const { db, caller: editor } = testCaller({ isEditor: true });
+  const song = await editor.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  const admin = testCaller({
+    db,
+    isAdmin: true,
+    isEditor: false,
+    userId: "admin-1",
+  }).caller;
+
+  await expect(
+    admin.song.create({ title: "X", cifraText: "x" }),
+  ).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "FORBIDDEN",
+  );
+  await expect(
+    admin.song.update({
+      id: song.id,
+      title: "Changed",
+      cifraText: LET_IT_BE,
+      chunks: [{ text: "Trecho" }],
+    }),
+  ).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "FORBIDDEN",
+  );
+});
+
 test("anonymous and non-editor cannot mutate Songs", async () => {
   const { db, caller: editor } = testCaller({ isEditor: true });
   const song = await editor.song.create({

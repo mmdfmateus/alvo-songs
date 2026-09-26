@@ -1,9 +1,23 @@
 import { expect, test } from "vitest";
 
 import {
+  adminNavLinks,
   bibliotecaSubnav,
   isNavActive,
 } from "~/app/_components/biblioteca-subnav";
+
+test("the User list link is shown only to an Admin", () => {
+  expect(adminNavLinks(false)).toEqual([]);
+  expect(adminNavLinks(true)).toEqual([
+    { href: "/usuarios", label: "Usuários" },
+  ]);
+});
+
+test("editor chrome does not include the User list", () => {
+  expect(bibliotecaSubnav(true).map((link) => link.href)).not.toContain(
+    "/usuarios",
+  );
+});
 
 test("public Biblioteca subnav is Músicas and Artistas only", () => {
   expect(bibliotecaSubnav(false)).toEqual([

@@ -90,6 +90,11 @@ _UI_: Exportar
 _Avoid_: generate, render, publish (unless a later meaning is introduced); treating Export as freezing Trechos back onto the Program; treating the Program as an archive of past Exports
 
 **Editor**:
-A signed-in Google user marked as an Editor on their account; the only person who may create or edit Songs and Artists. Not every signed-in user is an Editor. Not the owner of Programs.
+A signed-in Google user marked as an Editor on their account; the only person who may create or edit Songs and Artists. Not every signed-in user is an Editor. Not the owner of Programs. Not the same as Admin.
 _UI_: editor / editores (copy, not a nav item)
-_Avoid_: Role, admin, operator, User (as the name of this concept); storing Editor as an RBAC role or separate Editor entity; using Editor for who may edit a Program; treating any Google sign-in as Editor rights
+_Avoid_: Role, operator, User (as the name of this concept); storing Editor as an RBAC role or separate Editor entity; using Editor for who may edit a Program; treating any Google sign-in as Editor rights; treating Admin as Editor
+
+**Admin**:
+A signed-in Google user marked as an Admin on their account; the only person who may see the list of Users who have signed in. Admin does not grant Song or Artist editing. Not an RBAC role.
+_UI_: administrador (copy). The list page is Usuários, linked only for an Admin.
+_Avoid_: Role; storing Admin as a separate entity; treating Admin as Editor; a promote UI; invite-by-email; listing accounts that have never signed in
