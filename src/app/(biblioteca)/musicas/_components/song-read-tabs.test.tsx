@@ -1,22 +1,57 @@
 /** @vitest-environment jsdom */
 
+import { createElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, test } from "vitest";
 
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
 import { SongReadTabs } from "~/app/(biblioteca)/musicas/_components/song-read-tabs";
-import type { CifraViewLine } from "~/lib/cifra";
+import { parseCifra } from "~/lib/cifra-parse";
 
 afterEach(cleanup);
 
-const lines: CifraViewLine[] = [
-  { parts: [{ chords: "Am", lyrics: "Let it be" }] },
-];
+const LET_IT_BE = `       Am         C/G        F          C
+Let it be, let it be, let it be, let it be`;
+
+const storedLetra = "Let it be, let it be, let it be, let it be";
+
+test("Cifra tab hides Tom controls behind a top-right icon", () => {
+  const html = renderToStaticMarkup(
+    createElement(SongReadTabs, {
+      cifra: parseCifra(LET_IT_BE),
+      letra: storedLetra,
+    }),
+  );
+
+  expect(html).toContain('aria-label="Tom"');
+  expect(html).toContain("Diminuir tom");
+  expect(html).toContain("Aumentar tom");
+  expect(html).toContain("Restaurar tom original");
+  expect(html).toContain("Am");
+  expect(html).not.toContain("Bm");
+});
+
+test("Letra is the stored reading, not shown as the Cifra Tom toolbar target", () => {
+  const html = renderToStaticMarkup(
+    createElement(SongReadTabs, {
+      cifra: parseCifra(LET_IT_BE),
+      letra: storedLetra,
+      videoId: "abc123",
+    }),
+  );
+
+  expect(html).toContain("Escutar");
+  expect(html).not.toContain("youtube-nocookie");
+  expect(html).toContain('aria-label="Tom"');
+});
 
 test("tapping a Cifra chord opens a fretboard dialog", async () => {
   const user = userEvent.setup();
-  render(<SongReadTabs cifraLines={lines} letra="Let it be" />);
+  render(
+    <SongReadTabs cifra={parseCifra("Am\nLet it be")} letra="Let it be" />,
+  );
 
   await user.click(screen.getByRole("button", { name: "Am" }));
 
@@ -28,9 +63,9 @@ test("tapping a Cifra chord opens a fretboard dialog", async () => {
 test("unmapped Cifra names open an explicit miss state", async () => {
   const user = userEvent.setup();
   render(
-    <SongReadTabs
-      cifraLines={[{ parts: [{ chords: "Nxyz", lyrics: "oi" }] }]}
-      letra="oi"
+    <CifraView
+      interactiveChords
+      lines={[{ parts: [{ chords: "Nxyz", lyrics: "oi" }] }]}
     />,
   );
 
@@ -45,7 +80,11 @@ test("unmapped Cifra names open an explicit miss state", async () => {
 test("Letra and Escutar do not show chord diagrams", async () => {
   const user = userEvent.setup();
   render(
-    <SongReadTabs cifraLines={lines} letra="Let it be" videoId="abc123" />,
+    <SongReadTabs
+      cifra={parseCifra("Am\nLet it be")}
+      letra="Let it be"
+      videoId="abc123"
+    />,
   );
 
   await user.click(screen.getByRole("tab", { name: "Letra" }));
@@ -57,7 +96,9 @@ test("Letra and Escutar do not show chord diagrams", async () => {
 });
 
 test("editor Cifra preview does not open diagrams", () => {
-  render(<CifraView lines={lines} />);
+  render(
+    <CifraView lines={[{ parts: [{ chords: "Am", lyrics: "Let it be" }] }]} />,
+  );
 
   expect(screen.queryByRole("button", { name: "Am" })).toBeNull();
   expect(screen.getByText("Am")).toBeTruthy();
