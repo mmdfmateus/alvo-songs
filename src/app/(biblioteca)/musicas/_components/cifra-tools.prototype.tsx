@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { CifraTomControls } from "~/app/(biblioteca)/musicas/_components/cifra-view";
 import type { CifraViewLine } from "~/lib/cifra";
@@ -8,8 +8,8 @@ import type { CifraViewLine } from "~/lib/cifra";
 /**
  * PROTOTYPE — throwaway.
  * Question: Tom/Acordes as top-right icons that match this site, without layout shift.
- * Variants disagree on how the panel opens (overlay / side overlay / reserved slot).
- * Run: pnpm prototype:cifra-reading-tools  then /musicas/<id>?variant=A
+ * B is the leading layout (panel over the Cifra). A/C still switchable.
+ * Run: pnpm prototype:cifra-reading-tools  then /musicas/<id>?variant=B
  */
 
 export const CIFRA_TOOL_VARIANT_NAMES = {
@@ -21,9 +21,9 @@ export const CIFRA_TOOL_VARIANT_NAMES = {
 export type CifraToolVariant = keyof typeof CIFRA_TOOL_VARIANT_NAMES;
 
 const toolBtn =
-  "inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-sm font-semibold text-muted-foreground hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink";
+  "inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-sm font-semibold text-ink hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink";
 
-const toolBtnOn = "bg-ink text-white hover:text-white";
+const toolBtnOn = "bg-ink text-white hover:bg-ink hover:text-white";
 
 function TomMark() {
   return (
@@ -50,6 +50,40 @@ function AcordesMark() {
       <circle cx="13" cy="12" r="1.35" />
     </svg>
   );
+}
+
+function useCloseOnOutside(
+  open: boolean,
+  onClose: () => void,
+) {
+  const parts = useRef<(HTMLElement | null)[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (parts.current.some((node) => node?.contains(target))) return;
+      onClose();
+    }
+
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
+  return function bind(index: number) {
+    return (node: HTMLElement | null) => {
+      parts.current[index] = node;
+    };
+  };
 }
 
 function TomPanel({ tom }: { tom: CifraTomControls }) {
@@ -127,7 +161,7 @@ function ToolIcons({
   semitones: number;
 }) {
   return (
-    <div className="flex shrink-0 items-center">
+    <div className="flex shrink-0 items-center rounded-full border border-line bg-[#f0f0ec] p-0.5">
       <button
         type="button"
         aria-label="Tom"
@@ -182,16 +216,19 @@ export function VariantA({
 }) {
   const [open, setOpen] = useState<"tom" | "acordes" | null>(null);
   const names = uniqueNames(lines);
+  const bind = useCloseOnOutside(open !== null, () => setOpen(null));
   return (
     <div>
       <div className="relative mb-4 flex items-center justify-between gap-3">
         {tablist}
-        <ToolIcons open={open} onOpen={setOpen} semitones={tom.semitones} />
-        {open ? (
-          <div className="absolute top-full right-0 z-20 mt-1 rounded-[10px] border border-line bg-paper p-2 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-            <PanelBody open={open} tom={tom} names={names} />
-          </div>
-        ) : null}
+        <div ref={bind(0)} className="relative">
+          <ToolIcons open={open} onOpen={setOpen} semitones={tom.semitones} />
+          {open ? (
+            <div className="absolute top-full right-0 z-20 mt-1 rounded-[10px] border border-line bg-paper p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+              <PanelBody open={open} tom={tom} names={names} />
+            </div>
+          ) : null}
+        </div>
       </div>
       {sheet}
       <PrototypeState
@@ -218,16 +255,22 @@ export function VariantB({
 }) {
   const [open, setOpen] = useState<"tom" | "acordes" | null>(null);
   const names = uniqueNames(lines);
+  const bind = useCloseOnOutside(open !== null, () => setOpen(null));
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         {tablist}
-        <ToolIcons open={open} onOpen={setOpen} semitones={tom.semitones} />
+        <div ref={bind(0)}>
+          <ToolIcons open={open} onOpen={setOpen} semitones={tom.semitones} />
+        </div>
       </div>
       <div className="relative">
         {sheet}
         {open ? (
-          <div className="absolute top-0 right-0 z-20 w-44 rounded-[10px] border border-line bg-paper/95 p-2 shadow-[0_8px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm">
+          <div
+            ref={bind(1)}
+            className="absolute top-0 right-0 z-20 w-48 rounded-[10px] border border-line bg-paper p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+          >
             <p className="mb-1.5 px-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
               {open === "tom" ? "Tom" : "Acordes"}
             </p>
@@ -259,13 +302,16 @@ export function VariantC({
 }) {
   const [open, setOpen] = useState<"tom" | "acordes" | null>(null);
   const names = uniqueNames(lines);
+  const bind = useCloseOnOutside(open !== null, () => setOpen(null));
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
         {tablist}
-        <ToolIcons open={open} onOpen={setOpen} semitones={tom.semitones} />
+        <div ref={bind(0)}>
+          <ToolIcons open={open} onOpen={setOpen} semitones={tom.semitones} />
+        </div>
       </div>
-      <div className="mb-3 flex h-10 items-center justify-end overflow-hidden">
+      <div ref={bind(1)} className="mb-3 flex h-10 items-center justify-end overflow-hidden">
         <PanelBody open={open} tom={tom} names={names} />
       </div>
       {sheet}

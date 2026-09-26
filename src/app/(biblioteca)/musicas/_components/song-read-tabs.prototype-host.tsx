@@ -21,7 +21,7 @@ export function SongReadTabsPrototypeHost({
 }) {
   const searchParams = useSearchParams();
   const raw = searchParams.get("variant");
-  const variant: CifraToolVariant = isToolVariant(raw) ? raw : "A";
+  const variant: CifraToolVariant = isToolVariant(raw) ? raw : "B";
 
   return (
     <SongReadTabs

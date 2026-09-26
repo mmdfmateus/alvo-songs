@@ -14,7 +14,7 @@ export function PrototypeSwitcher({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const current = searchParams.get("variant") ?? variants[0] ?? "A";
+  const current = searchParams.get("variant") ?? "B";
 
   function go(next: string) {
     const params = new URLSearchParams(searchParams.toString());
