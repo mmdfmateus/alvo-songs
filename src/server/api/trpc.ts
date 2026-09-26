@@ -12,6 +12,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import type { TRPCContext } from "~/server/api/context";
+import { requireAdmin } from "~/server/auth/require-admin";
 import { requireEditor } from "~/server/auth/require-editor";
 
 /**
@@ -126,6 +127,24 @@ export const editorProcedure = t.procedure
       ctx: {
         session: { ...session, user: session.user },
         isEditor: true as const,
+      },
+    });
+  });
+
+/**
+ * Admin procedure — list signed-in Users.
+ *
+ * Re-reads `User.isAdmin` from the DB on every call so a demotion applies
+ * without re-login (ADR 0002). Editor status does not pass this gate.
+ */
+export const adminProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    const session = await requireAdmin(ctx.db, ctx.session);
+    return next({
+      ctx: {
+        session: { ...session, user: session.user },
+        isAdmin: true as const,
       },
     });
   });

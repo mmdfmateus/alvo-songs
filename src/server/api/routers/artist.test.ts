@@ -36,6 +36,15 @@ test("anonymous caller cannot create an Artist", async () => {
   );
 });
 
+test("admin who is not an editor cannot create an Artist", async () => {
+  const { caller } = testCaller({ isAdmin: true, isEditor: false });
+
+  await expect(caller.artist.create({ name: "Alvo" })).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "FORBIDDEN",
+  );
+});
+
 test("signed-in non-editor cannot create an Artist", async () => {
   const { caller } = testCaller({ isEditor: false });
 
