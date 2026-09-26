@@ -38,7 +38,11 @@ export default async function UsersPage() {
                   <td className="px-4 py-3">{user.name ?? "—"}</td>
                   <td className="px-4 py-3">{user.email ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <EditorToggle userId={user.id} isEditor={user.isEditor} />
+                    <EditorToggle
+                      userId={user.id}
+                      name={user.name}
+                      isEditor={user.isEditor}
+                    />
                   </td>
                 </tr>
               ))}
