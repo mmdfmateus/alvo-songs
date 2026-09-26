@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { LivrinhoFlags } from "~/app/(biblioteca)/musicas/_components/livrinho-flags";
-import { SongReadTabs } from "~/app/(biblioteca)/musicas/_components/song-read-tabs";
+import { SongReadTabsPrototypeHost } from "~/app/(biblioteca)/musicas/_components/song-read-tabs.prototype-host";
 import { livrinhoFlagsByTitle, loadImportedLivrinho } from "~/lib/livrinho-import";
 import { api } from "~/trpc/server";
 
@@ -67,11 +68,13 @@ export default async function SongPage({
           </Link>
         ) : null}
       </div>
-      <SongReadTabs
-        cifra={song.cifra}
-        letra={song.letra}
-        videoId={song.videoId}
-      />
+      <Suspense>
+        <SongReadTabsPrototypeHost
+          cifra={song.cifra}
+          letra={song.letra}
+          videoId={song.videoId}
+        />
+      </Suspense>
     </>
   );
 }
