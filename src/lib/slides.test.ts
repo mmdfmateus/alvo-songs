@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { expandSections, resolveLivePreviewSong } from "~/lib/slides";
+import { expandSections, resolveLivePreviewSong, slideSongIds } from "~/lib/slides";
 
 test("Abertura expands to a brand opening slide", () => {
   expect(
@@ -104,6 +104,35 @@ test("live preview treats fetched-null as a missing Song", () => {
   expect(
     resolveLivePreviewSong("abc", { isFetched: true, data: null }, "Let It Be"),
   ).toBeNull();
+});
+
+test("song slides point at that song and other slides do not", () => {
+  const sections = [
+    {
+      type: "opening",
+      payload: { communityName: "COMU JOVEM" },
+    },
+    {
+      type: "song",
+      payload: {},
+      songId: "ale",
+      song: {
+        title: "Aleluia",
+        chunks: [{ text: "a" }, { text: "b" }],
+      },
+    },
+    { type: "announcements", payload: { title: "Avisos" } },
+  ];
+
+  expect(slideSongIds(sections)).toEqual([
+    null,
+    "ale",
+    "ale",
+    "ale",
+    null,
+    null,
+  ]);
+  expect(slideSongIds(sections)).toHaveLength(expandSections(sections).length);
 });
 
 test("empty Trecho text still emits a lyric slide", () => {

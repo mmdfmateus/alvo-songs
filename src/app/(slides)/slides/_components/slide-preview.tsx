@@ -1,3 +1,5 @@
+import { Pencil } from "lucide-react";
+
 import type { Slide } from "~/lib/slides";
 import {
   DEFAULT_SLIDE_THEME_ID,
@@ -9,9 +11,15 @@ import { cn } from "~/lib/utils";
 export function SlidePreview({
   slides,
   themeId = DEFAULT_SLIDE_THEME_ID,
+  songIds,
+  editingSongId,
+  onEditSong,
 }: {
   slides: Slide[];
   themeId?: SlideThemeId;
+  songIds?: (string | null)[];
+  editingSongId?: string | null;
+  onEditSong?: (songId: string) => void;
 }) {
   const theme = getSlideTheme(themeId);
 
@@ -33,9 +41,25 @@ export function SlidePreview({
       {slides.map((slide, index) => (
         <li
           key={`${slide.kind}-${index}`}
-          className="@container flex aspect-video flex-col items-center justify-center overflow-hidden rounded-[10px] border border-line p-[8cqw] text-center"
+          className="@container relative flex aspect-video flex-col items-center justify-center overflow-hidden rounded-[10px] border border-line p-[8cqw] text-center"
           style={{ background: theme.background, color: theme.text }}
         >
+          {onEditSong && songIds?.[index] ? (
+            <button
+              type="button"
+              aria-label="Editar trechos"
+              title="Editar trechos"
+              aria-expanded={editingSongId === songIds[index]}
+              className="absolute top-2 right-2 z-10 rounded-md p-1.5 hover:bg-black/10"
+              style={{ color: theme.text }}
+              onClick={() => {
+                const songId = songIds[index];
+                if (songId) onEditSong(songId);
+              }}
+            >
+              <Pencil className="size-4" />
+            </button>
+          ) : null}
           {slide.kind === "opening" ? (
             <>
               <p
