@@ -219,6 +219,54 @@ test("Program preview reads live Song title and Trechos", async () => {
   ]);
 });
 
+test("saved Trechos update Program slides and stay off the Program", async () => {
+  const { db } = testCaller({ isEditor: true });
+  const editor = testCaller({ db, isEditor: true }).caller;
+  const visitor = testCaller({ db, signedIn: false }).caller;
+  const song = await db.song.create({
+    data: {
+      title: "Grande É o Senhor",
+      cifra: { type: "chordSheet", lines: [] },
+      chunks: {
+        create: [{ position: 0, text: "Trecho original" }],
+      },
+    },
+  });
+
+  const created = await visitor.program.create({
+    name: "Culto 09/08",
+    sections: [{ type: "song", songId: song.id, payload: {} }],
+  });
+
+  await editor.song.updateChunks({
+    id: song.id,
+    chunks: [{ text: "Trecho novo" }, { text: "Outro trecho" }],
+  });
+
+  const view = await visitor.program.byId({ id: created.id });
+  expect(view?.slides).toEqual([
+    { kind: "titleChip", title: "Grande É o Senhor" },
+    { kind: "lyric", text: "Trecho novo" },
+    { kind: "lyric", text: "Outro trecho" },
+  ]);
+  expect(view?.sections).toMatchObject([
+    {
+      type: "song",
+      songId: song.id,
+      payload: {},
+      song: {
+        chunks: [{ text: "Trecho novo" }, { text: "Outro trecho" }],
+      },
+    },
+  ]);
+
+  const editable = await visitor.program.forEdit({
+    id: created.id,
+    ownerToken: created.ownerToken,
+  });
+  expect(editable?.slides).toEqual(view?.slides);
+});
+
 test("dangling songId contributes no slides and exposes a broken reference", async () => {
   const { caller } = testCaller({ signedIn: false });
   const created = await caller.program.create({

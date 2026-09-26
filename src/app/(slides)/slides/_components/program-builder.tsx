@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -9,6 +10,13 @@ import {
   ExportPdfHint,
 } from "~/app/(slides)/slides/_components/export-pdf-button";
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
+import { SongTrechosField } from "~/app/(slides)/slides/_components/song-trechos-field";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import {
   SlideThemePicker,
   useSlideTheme,
@@ -24,6 +32,7 @@ import {
   DEFAULT_COMMUNITY_NAME,
   expandSections,
   resolveLivePreviewSong,
+  slideSongIds,
 } from "~/lib/slides";
 import { api } from "~/trpc/react";
 
@@ -288,33 +297,34 @@ function useLivePreviewSlides(
     songIds.map((id, index) => [id, songQueries[index]]),
   );
 
-  const slides = expandSections(
-    sections.map((section) => {
-      if (section.type === "song") {
-        const query = section.songId ? queryById.get(section.songId) : undefined;
-        const listedTitle = librarySongs.find(
-          (song) => song.id === section.songId,
-        )?.title;
-        return {
-          type: "song",
-          payload: {},
-          song: resolveLivePreviewSong(
-            section.songId,
-            query
-              ? { isFetched: query.isFetched, data: query.data }
-              : undefined,
-            listedTitle,
-          ),
-        };
-      }
-      return { type: section.type, payload: section.payload };
-    }),
-  );
+  const expanded = sections.map((section) => {
+    if (section.type === "song") {
+      const query = section.songId ? queryById.get(section.songId) : undefined;
+      const listedTitle = librarySongs.find(
+        (song) => song.id === section.songId,
+      )?.title;
+      return {
+        type: "song" as const,
+        payload: {},
+        songId: section.songId,
+        song: resolveLivePreviewSong(
+          section.songId,
+          query
+            ? { isFetched: query.isFetched, data: query.data }
+            : undefined,
+          listedTitle,
+        ),
+      };
+    }
+    return { type: section.type, payload: section.payload };
+  });
+  const slides = expandSections(expanded);
+  const songIdsBySlide = slideSongIds(expanded);
   const songsFetched = songIds.every(
     (id) => queryById.get(id)?.isFetched === true,
   );
 
-  return { slides, songsFetched };
+  return { slides, songIdsBySlide, songsFetched };
 }
 
 export function ProgramBuilder({
@@ -346,11 +356,22 @@ export function ProgramBuilder({
     null,
   );
   const library = api.song.list.useQuery();
+  const viewer = api.auth.viewer.useQuery();
+  const canEditTrechos = viewer.data?.isEditor === true;
+  const [openSongId, setOpenSongId] = useState<string | null>(null);
+  const openSong = api.song.byId.useQuery(
+    { id: openSongId ?? "" },
+    { enabled: canEditTrechos && Boolean(openSongId) },
+  );
   const { themeId, chooseTheme } = useSlideTheme(program.id);
-  const { slides, songsFetched } = useLivePreviewSlides(
+  const { slides, songIdsBySlide, songsFetched } = useLivePreviewSlides(
     sections,
     library.data ?? [],
   );
+
+  function toggleTrechos(songId: string) {
+    setOpenSongId((current) => (current === songId ? null : songId));
+  }
 
   const update = api.program.update.useMutation();
   const remove = api.program.delete.useMutation({
@@ -547,6 +568,23 @@ export function ProgramBuilder({
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
+                  {canEditTrechos && section.type === "song" ? (
+                    <button
+                      type="button"
+                      aria-label="Editar trechos"
+                      title="Editar trechos"
+                      aria-expanded={
+                        Boolean(section.songId) && openSongId === section.songId
+                      }
+                      disabled={!section.songId}
+                      onClick={() => {
+                        if (section.songId) toggleTrechos(section.songId);
+                      }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-[#f0f0ec] hover:text-ink disabled:opacity-40"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     aria-label="Subir"
@@ -719,8 +757,42 @@ export function ProgramBuilder({
         <div className="mb-6">
           <ExportPdfHint />
         </div>
-        <SlidePreview slides={slides} themeId={themeId} />
+        <SlidePreview
+          slides={slides}
+          themeId={themeId}
+          songIds={canEditTrechos ? songIdsBySlide : undefined}
+          editingSongId={canEditTrechos ? openSongId : undefined}
+          onEditSong={canEditTrechos ? toggleTrechos : undefined}
+        />
       </section>
+      {canEditTrechos ? (
+        <Sheet
+          open={Boolean(openSongId)}
+          onOpenChange={(next) => {
+            if (!next) setOpenSongId(null);
+          }}
+        >
+          <SheetContent
+            side="right"
+            className="w-full overflow-y-auto bg-paper text-ink sm:max-w-xl"
+          >
+            <SheetHeader className="pr-10">
+              <SheetTitle className="text-ink">
+                {openSong.data?.title ?? "Trechos"}
+              </SheetTitle>
+            </SheetHeader>
+            {openSongId && openSong.data ? (
+              <div className="px-4 pb-6">
+                <SongTrechosField
+                  key={openSongId}
+                  songId={openSongId}
+                  chunks={openSong.data.chunks}
+                />
+              </div>
+            ) : null}
+          </SheetContent>
+        </Sheet>
+      ) : null}
     </div>
   );
 }

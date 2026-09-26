@@ -493,3 +493,60 @@ test("anonymous and non-editor cannot update Trechos", async () => {
     "Whisper words of wisdom, let it be",
   ]);
 });
+
+test("editor can replace Trechos without changing the Cifra", async () => {
+  const { caller } = testCaller({ isEditor: true });
+  const created = await caller.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+  const original = await caller.song.byId({ id: created.id });
+
+  await caller.song.updateChunks({
+    id: created.id,
+    chunks: [{ text: "Segundo trecho" }, { text: "" }, { text: "Primeiro trecho" }],
+  });
+
+  const updated = await caller.song.byId({ id: created.id });
+  expect(updated?.title).toBe("Let It Be");
+  expect(updated?.cifra).toEqual(original?.cifra);
+  expect(updated?.chunks.map((chunk) => chunk.text)).toEqual([
+    "Segundo trecho",
+    "",
+    "Primeiro trecho",
+  ]);
+});
+
+test("anonymous and non-editor cannot replace Trechos", async () => {
+  const { db, caller: editor } = testCaller({ isEditor: true });
+  const song = await editor.song.create({
+    title: "Let It Be",
+    cifraText: LET_IT_BE,
+  });
+
+  await expect(
+    testCaller({ db, signedIn: false }).caller.song.updateChunks({
+      id: song.id,
+      chunks: [{ text: "Hacked" }],
+    }),
+  ).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "UNAUTHORIZED",
+  );
+
+  await expect(
+    testCaller({ db, isEditor: false, userId: "user-2" }).caller.song.updateChunks({
+      id: song.id,
+      chunks: [{ text: "Hacked" }],
+    }),
+  ).rejects.toSatisfy(
+    (error: unknown) =>
+      error instanceof TRPCError && error.code === "FORBIDDEN",
+  );
+
+  const detail = await editor.song.byId({ id: song.id });
+  expect(detail?.chunks.map((chunk) => chunk.text)).toEqual([
+    "Let it be, let it be, let it be, let it be",
+    "Whisper words of wisdom, let it be",
+  ]);
+});

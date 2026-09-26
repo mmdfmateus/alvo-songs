@@ -142,6 +142,39 @@ export const songRouter = createTRPCRouter({
       });
     }),
 
+  updateChunks: editorProcedure
+    .input(
+      z.object({
+        id: z.string().min(1),
+        chunks: z.array(z.object({ text: z.string() })),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.song.findUnique({
+        where: { id: input.id },
+        select: { id: true },
+      });
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Música não encontrada.",
+        });
+      }
+
+      await ctx.db.$transaction(async (tx) => {
+        await tx.lyricChunk.deleteMany({ where: { songId: input.id } });
+        await tx.lyricChunk.createMany({
+          data: input.chunks.map((chunk, position) => ({
+            songId: input.id,
+            position,
+            text: chunk.text,
+          })),
+        });
+      });
+
+      return { id: input.id };
+    }),
+
   delete: editorProcedure
     .input(z.object({ id: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {

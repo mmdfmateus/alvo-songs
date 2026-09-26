@@ -108,3 +108,35 @@ export function expandSections(sections: ExpandableSection[]): Slide[] {
 
   return slides;
 }
+
+/** One entry per expanded slide. Song title and lyric slides carry that song's id. */
+export function slideSongIds(
+  sections: (ExpandableSection & { songId?: string | null })[],
+): (string | null)[] {
+  const ids: (string | null)[] = [];
+
+  for (const section of sections) {
+    switch (section.type) {
+      case "opening":
+      case "moment":
+        ids.push(null);
+        break;
+      case "announcements":
+      case "game":
+        ids.push(null);
+        for (let i = 0; i < BLANK_SLIDE_COUNT; i += 1) ids.push(null);
+        break;
+      case "song": {
+        if (!section.song) break;
+        const songId = section.songId ?? null;
+        ids.push(songId);
+        for (const _chunk of section.song.chunks) ids.push(songId);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  return ids;
+}
