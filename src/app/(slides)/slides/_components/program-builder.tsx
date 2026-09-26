@@ -11,6 +11,14 @@ import {
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
 import { SongTrechosField } from "~/app/(slides)/slides/_components/song-trechos-field";
 import {
+  PrototypePaneEditor,
+  PrototypeSectionEditor,
+  PrototypeSeed,
+  PrototypeSlideEditor,
+  usePrototypeLabOptional,
+} from "~/app/(slides)/slides/_components/prototype-trechos-layout";
+import type { PrototypeVariant } from "~/app/(slides)/slides/_components/prototype-trechos-variant";
+import {
   SlideThemePicker,
   useSlideTheme,
 } from "~/app/(slides)/slides/_components/slide-theme-picker";
@@ -229,11 +237,13 @@ function SongPicker({
   songId,
   songs,
   canEditTrechos,
+  prototypeVariant,
   onChange,
 }: {
   songId: string | null;
   songs: { id: string; title: string }[];
   canEditTrechos: boolean;
+  prototypeVariant: PrototypeVariant | null;
   onChange: (songId: string | null) => void;
 }) {
   const detail = api.song.byId.useQuery(
@@ -269,7 +279,21 @@ function SongPicker({
       {!songId ? (
         <p className="text-sm text-muted-foreground">Escolha uma música da Biblioteca.</p>
       ) : null}
-      {canEditTrechos && songId && detail.data ? (
+      {prototypeVariant === "section" && songId && detail.data ? (
+        <PrototypeSectionEditor
+          songId={songId}
+          title={detail.data.title}
+          serverTexts={detail.data.chunks.map((chunk) => chunk.text)}
+        />
+      ) : null}
+      {prototypeVariant && prototypeVariant !== "section" && songId && detail.data ? (
+        <PrototypeSeed
+          songId={songId}
+          title={detail.data.title}
+          serverTexts={detail.data.chunks.map((chunk) => chunk.text)}
+        />
+      ) : null}
+      {!prototypeVariant && canEditTrechos && songId && detail.data ? (
         <SongTrechosField
           key={songId}
           songId={songId}
@@ -283,6 +307,7 @@ function SongPicker({
 function useLivePreviewSlides(
   sections: DraftSection[],
   librarySongs: { id: string; title: string }[],
+  trechosOverride?: Record<string, string[]>,
 ) {
   const songIds = [
     ...new Set(
@@ -305,13 +330,26 @@ function useLivePreviewSlides(
         const listedTitle = librarySongs.find(
           (song) => song.id === section.songId,
         )?.title;
+        const override = section.songId
+          ? trechosOverride?.[section.songId]
+          : undefined;
         return {
           type: "song",
           payload: {},
           song: resolveLivePreviewSong(
             section.songId,
             query
-              ? { isFetched: query.isFetched, data: query.data }
+              ? {
+                  isFetched: query.isFetched,
+                  data: query.data
+                    ? {
+                        ...query.data,
+                        chunks: override
+                          ? override.map((text) => ({ text }))
+                          : query.data.chunks,
+                      }
+                    : query.data,
+                }
               : undefined,
             listedTitle,
           ),
@@ -330,7 +368,9 @@ function useLivePreviewSlides(
 export function ProgramBuilder({
   program,
   ownerToken,
+  prototypeVariant = null,
 }: {
+  prototypeVariant?: PrototypeVariant | null;
   program: {
     id: string;
     name: string;
@@ -357,10 +397,21 @@ export function ProgramBuilder({
   );
   const library = api.song.list.useQuery();
   const viewer = api.auth.viewer.useQuery();
+  const prototypeLab = usePrototypeLabOptional();
   const { themeId, chooseTheme } = useSlideTheme(program.id);
+  const trechosOverride =
+    prototypeVariant === "section" && prototypeLab
+      ? Object.fromEntries(
+          Object.entries(prototypeLab.bySong).map(([id, song]) => [
+            id,
+            song.texts,
+          ]),
+        )
+      : undefined;
   const { slides, songsFetched } = useLivePreviewSlides(
     sections,
     library.data ?? [],
+    trechosOverride,
   );
 
   const update = api.program.update.useMutation();
@@ -641,6 +692,7 @@ export function ProgramBuilder({
                   songId={section.songId}
                   songs={library.data ?? []}
                   canEditTrechos={viewer.data?.isEditor === true}
+                  prototypeVariant={prototypeVariant}
                   onChange={(songId) => {
                     markDirty();
                     const copy = [...sections];
@@ -724,14 +776,24 @@ export function ProgramBuilder({
       </form>
 
       <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold">Prévia</h2>
-          <SlideThemePicker value={themeId} onChange={chooseTheme} />
-        </div>
-        <div className="mb-6">
-          <ExportPdfHint />
-        </div>
-        <SlidePreview slides={slides} themeId={themeId} />
+        {prototypeVariant === "pane" || prototypeVariant === "slide" ? (
+          prototypeVariant === "pane" ? (
+            <PrototypePaneEditor />
+          ) : (
+            <PrototypeSlideEditor />
+          )
+        ) : (
+          <>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold">Prévia</h2>
+              <SlideThemePicker value={themeId} onChange={chooseTheme} />
+            </div>
+            <div className="mb-6">
+              <ExportPdfHint />
+            </div>
+            <SlidePreview slides={slides} themeId={themeId} />
+          </>
+        )}
       </section>
     </div>
   );

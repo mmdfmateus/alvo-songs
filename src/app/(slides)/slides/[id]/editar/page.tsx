@@ -4,6 +4,11 @@ import { notFound } from "next/navigation";
 
 import { ProgramBuilder } from "~/app/(slides)/slides/_components/program-builder";
 import {
+  PrototypeLab,
+  PrototypeSwitcher,
+} from "~/app/(slides)/slides/_components/prototype-trechos-layout";
+import { parsePrototypeVariant } from "~/app/(slides)/slides/_components/prototype-trechos-variant";
+import {
   PROGRAM_OWNERS_COOKIE,
   parseOwnerTokens,
 } from "~/lib/program-owners-cookie";
@@ -11,10 +16,17 @@ import { api } from "~/trpc/server";
 
 export default async function ProgramEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ variant?: string }>;
 }) {
   const { id } = await params;
+  const { variant: variantParam } = await searchParams;
+  const prototypeVariant =
+    process.env.NODE_ENV === "production"
+      ? null
+      : parsePrototypeVariant(variantParam);
   const program = await api.program.byId({ id });
   if (!program) notFound();
 
@@ -56,5 +68,18 @@ export default async function ProgramEditPage({
     );
   }
 
-  return <ProgramBuilder program={editable} ownerToken={ownerToken} />;
+  if (!prototypeVariant) {
+    return <ProgramBuilder program={editable} ownerToken={ownerToken} />;
+  }
+
+  return (
+    <PrototypeLab>
+      <ProgramBuilder
+        program={editable}
+        ownerToken={ownerToken}
+        prototypeVariant={prototypeVariant}
+      />
+      <PrototypeSwitcher programId={id} variant={prototypeVariant} />
+    </PrototypeLab>
+  );
 }
