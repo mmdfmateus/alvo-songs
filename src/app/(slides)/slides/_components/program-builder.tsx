@@ -11,6 +11,14 @@ import {
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
 import { SongTrechosField } from "~/app/(slides)/slides/_components/song-trechos-field";
 import {
+  PrototypeMarkedPreview,
+  PrototypePillButton,
+  PrototypeSheet,
+  PrototypeToolbarButton,
+  usePrototypeLabOptional,
+} from "~/app/(slides)/slides/_components/prototype-trechos-button";
+import type { PrototypeVariant } from "~/app/(slides)/slides/_components/prototype-trechos-button-variant";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -235,11 +243,13 @@ function SongPicker({
   songId,
   songs,
   canEditTrechos,
+  prototypeVariant,
   onChange,
 }: {
   songId: string | null;
   songs: { id: string; title: string }[];
   canEditTrechos: boolean;
+  prototypeVariant: PrototypeVariant | null;
   onChange: (songId: string | null) => void;
 }) {
   const detail = api.song.byId.useQuery(
@@ -277,7 +287,10 @@ function SongPicker({
       {!songId ? (
         <p className="text-sm text-muted-foreground">Escolha uma música da Biblioteca.</p>
       ) : null}
-      {canEditTrechos && songId && detail.data ? (
+      {prototypeVariant === "pill" && songId && detail.data ? (
+        <PrototypePillButton songId={songId} title={detail.data.title} />
+      ) : null}
+      {!prototypeVariant && canEditTrechos && songId && detail.data ? (
         <>
           <button
             type="button"
@@ -320,6 +333,7 @@ function SongPicker({
 function useLivePreviewSlides(
   sections: DraftSection[],
   librarySongs: { id: string; title: string }[],
+  trechosOverride?: Record<string, string[]>,
 ) {
   const songIds = [
     ...new Set(
@@ -342,16 +356,26 @@ function useLivePreviewSlides(
         const listedTitle = librarySongs.find(
           (song) => song.id === section.songId,
         )?.title;
+        const resolved = resolveLivePreviewSong(
+          section.songId,
+          query
+            ? { isFetched: query.isFetched, data: query.data }
+            : undefined,
+          listedTitle,
+        );
+        const override = section.songId
+          ? trechosOverride?.[section.songId]
+          : undefined;
         return {
           type: "song",
           payload: {},
-          song: resolveLivePreviewSong(
-            section.songId,
-            query
-              ? { isFetched: query.isFetched, data: query.data }
-              : undefined,
-            listedTitle,
-          ),
+          song:
+            resolved && override
+              ? {
+                  title: resolved.title,
+                  chunks: override.map((text) => ({ text })),
+                }
+              : resolved,
         };
       }
       return { type: section.type, payload: section.payload };
@@ -367,6 +391,7 @@ function useLivePreviewSlides(
 export function ProgramBuilder({
   program,
   ownerToken,
+  prototypeVariant = null,
 }: {
   program: {
     id: string;
@@ -379,6 +404,7 @@ export function ProgramBuilder({
     }[];
   };
   ownerToken: string;
+  prototypeVariant?: PrototypeVariant | null;
 }) {
   const router = useRouter();
   const [name, setName] = useState(program.name);
@@ -395,9 +421,19 @@ export function ProgramBuilder({
   const library = api.song.list.useQuery();
   const viewer = api.auth.viewer.useQuery();
   const { themeId, chooseTheme } = useSlideTheme(program.id);
+  const lab = usePrototypeLabOptional();
+  const trechosOverride: Record<string, string[]> | undefined = lab
+    ? Object.fromEntries(
+        Object.entries(lab.bySong).map(([id, song]) => [
+          id,
+          song.chunks.map((chunk) => chunk.text),
+        ]),
+      )
+    : undefined;
   const { slides, songsFetched } = useLivePreviewSlides(
     sections,
     library.data ?? [],
+    trechosOverride,
   );
 
   const update = api.program.update.useMutation();
@@ -595,6 +631,15 @@ export function ProgramBuilder({
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
+                  {prototypeVariant === "toolbar" && section.type === "song" ? (
+                    <PrototypeToolbarButton
+                      songId={section.songId}
+                      title={
+                        library.data?.find((song) => song.id === section.songId)
+                          ?.title ?? "Música"
+                      }
+                    />
+                  ) : null}
                   <button
                     type="button"
                     aria-label="Subir"
@@ -678,6 +723,7 @@ export function ProgramBuilder({
                   songId={section.songId}
                   songs={library.data ?? []}
                   canEditTrechos={viewer.data?.isEditor === true}
+                  prototypeVariant={prototypeVariant}
                   onChange={(songId) => {
                     markDirty();
                     const copy = [...sections];
@@ -768,8 +814,18 @@ export function ProgramBuilder({
         <div className="mb-6">
           <ExportPdfHint />
         </div>
-        <SlidePreview slides={slides} themeId={themeId} />
+        {prototypeVariant === "slide" ? (
+          <PrototypeMarkedPreview
+            sections={sections}
+            slides={slides}
+            themeId={themeId}
+            librarySongs={library.data ?? []}
+          />
+        ) : (
+          <SlidePreview slides={slides} themeId={themeId} />
+        )}
       </section>
+      {prototypeVariant ? <PrototypeSheet /> : null}
     </div>
   );
 }

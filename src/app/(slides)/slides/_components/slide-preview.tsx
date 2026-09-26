@@ -9,9 +9,11 @@ import { cn } from "~/lib/utils";
 export function SlidePreview({
   slides,
   themeId = DEFAULT_SLIDE_THEME_ID,
+  editMarks,
 }: {
   slides: Slide[];
   themeId?: SlideThemeId;
+  editMarks?: { index: number; onEdit: () => void }[];
 }) {
   const theme = getSlideTheme(themeId);
 
@@ -33,9 +35,21 @@ export function SlidePreview({
       {slides.map((slide, index) => (
         <li
           key={`${slide.kind}-${index}`}
-          className="@container flex aspect-video flex-col items-center justify-center overflow-hidden rounded-[10px] border border-line p-[8cqw] text-center"
+          className="@container relative flex aspect-video flex-col items-center justify-center overflow-hidden rounded-[10px] border border-line p-[8cqw] text-center"
           style={{ background: theme.background, color: theme.text }}
         >
+          {editMarks
+            ?.filter((mark) => mark.index === index)
+            .map((mark) => (
+              <button
+                key="edit"
+                type="button"
+                className="absolute top-2 right-2 z-10 rounded-md bg-black/75 px-2 py-1 text-[11px] font-semibold text-white"
+                onClick={mark.onEdit}
+              >
+                Editar trechos
+              </button>
+            ))}
           {slide.kind === "opening" ? (
             <>
               <p
