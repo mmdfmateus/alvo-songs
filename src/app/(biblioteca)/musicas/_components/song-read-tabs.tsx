@@ -4,7 +4,8 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import { CifraTabTools } from "~/app/(biblioteca)/musicas/_components/cifra-tab-tools";
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
-import { cifraViewLines } from "~/lib/cifra";
+import { UniqueChordStrip } from "~/app/(biblioteca)/musicas/_components/unique-chord-strip";
+import { cifraViewLines, uniqueDisplayedChords } from "~/lib/cifra";
 import { transposeCifra } from "~/lib/cifra-parse";
 
 type ReadTab = "cifra" | "letra" | "listen";
@@ -25,6 +26,7 @@ export function SongReadTabs({
     () => cifraViewLines(transposeCifra(cifra, semitones)),
     [cifra, semitones],
   );
+  const uniqueNames = uniqueDisplayedChords(cifraLines);
 
   const tablist = (
     <div
@@ -81,6 +83,11 @@ export function SongReadTabs({
           onRaise: () => setSemitones((value) => value + 1),
           onReset: () => setSemitones(0),
         }}
+        acordes={
+          uniqueNames.length > 0 ? (
+            <UniqueChordStrip names={uniqueNames} />
+          ) : undefined
+        }
         sheet={<CifraView lines={cifraLines} interactiveChords />}
       />
     );

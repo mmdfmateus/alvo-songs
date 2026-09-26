@@ -1,7 +1,12 @@
 import { expect, test } from "vitest";
 
 import { cifraToCow, parseCifra, transposeCifra } from "~/lib/cifra-parse";
-import { cifraViewLines, deriveLetra, seedLyricChunks } from "~/lib/cifra";
+import {
+  cifraViewLines,
+  deriveLetra,
+  seedLyricChunks,
+  uniqueDisplayedChords,
+} from "~/lib/cifra";
 
 const LET_IT_BE = `       Am         C/G        F          C
 Let it be, let it be, let it be, let it be
@@ -111,4 +116,25 @@ test("transposeCifra reset (0) restores stored chord names", () => {
 test("transposeCifra does not move Letra", () => {
   const stored = parseCifra(LET_IT_BE);
   expect(deriveLetra(transposeCifra(stored, 3))).toBe(deriveLetra(stored));
+});
+
+test("uniqueDisplayedChords keeps first-seen names from the current reading", () => {
+  expect(uniqueDisplayedChords(cifraViewLines(parseCifra(LET_IT_BE)))).toEqual([
+    "Am",
+    "C/G",
+    "F",
+    "C",
+    "G",
+    "C/E",
+    "Dm",
+  ]);
+});
+
+test("uniqueDisplayedChords skips blank chord slots", () => {
+  expect(
+    uniqueDisplayedChords([
+      { parts: [{ chords: "  ", lyrics: "oi" }, { chords: "G", lyrics: "lá" }] },
+      { parts: [{ chords: "G", lyrics: "de novo" }] },
+    ]),
+  ).toEqual(["G"]);
 });
