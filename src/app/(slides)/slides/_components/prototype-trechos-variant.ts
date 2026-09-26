@@ -1,9 +1,10 @@
-// PROTOTYPE — throwaway. Shared by the server page and the client switcher.
+// PROTOTYPE — throwaway. Round 2.
+// Question: the Trechos editor stays hidden. How does it appear after Editar trechos?
 
 export const PROTOTYPE_VARIANTS = [
-  { id: "section", name: "Inside the section" },
-  { id: "pane", name: "Editor takes the preview" },
-  { id: "slide", name: "One slide at a time" },
+  { id: "inline", name: "Opens in the section" },
+  { id: "sheet", name: "Slides in from the side" },
+  { id: "dialog", name: "Pops over the page" },
 ] as const;
 
 export type PrototypeVariant = (typeof PROTOTYPE_VARIANTS)[number]["id"];
@@ -11,6 +12,6 @@ export type PrototypeVariant = (typeof PROTOTYPE_VARIANTS)[number]["id"];
 export function parsePrototypeVariant(
   value: string | undefined,
 ): PrototypeVariant {
-  if (value === "pane" || value === "slide") return value;
-  return "section";
+  if (value === "sheet" || value === "dialog") return value;
+  return "inline";
 }

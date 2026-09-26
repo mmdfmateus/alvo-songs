@@ -1,8 +1,8 @@
 "use client";
 
-// PROTOTYPE — throwaway. Not production.
-// Question: where do Trechos sit while building a Program?
-// Three variants on /slides/[id]/editar, switchable via ?variant=
+// PROTOTYPE — throwaway. Not production. Round 2.
+// Question: the Trechos editor stays hidden until Editar trechos. How does it appear?
+// Three variants on /slides/[id]/editar?variant= — inline, sheet, dialog.
 // In-memory only. Does not save the Song.
 
 import {
@@ -14,6 +14,14 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 
 import {
   PROTOTYPE_VARIANTS,
@@ -29,13 +37,13 @@ export {
 type Lab = {
   activeSongId: string | null;
   bySong: Record<string, { title: string; texts: string[] }>;
-  index: number;
+  editing: boolean;
   ensure: (songId: string, title: string, serverTexts: string[]) => void;
+  open: () => void;
+  close: () => void;
   setText: (songId: string, index: number, text: string) => void;
   add: (songId: string) => void;
   remove: (songId: string, index: number) => void;
-  move: (songId: string, index: number, delta: -1 | 1) => void;
-  setIndex: (index: number) => void;
 };
 
 const LabContext = createContext<Lab | null>(null);
@@ -55,23 +63,26 @@ export function PrototypeLab({ children }: { children: ReactNode }) {
   const [bySong, setBySong] = useState<
     Record<string, { title: string; texts: string[] }>
   >({});
-  const [index, setIndex] = useState(0);
+  const [editing, setEditing] = useState(false);
 
   const lab = useMemo<Lab>(
     () => ({
       activeSongId,
       bySong,
-      index,
+      editing,
       ensure(songId, title, serverTexts) {
-        setActiveSongId((current) => {
-          if (current !== songId) setIndex(0);
-          return songId;
-        });
+        setActiveSongId(songId);
         setBySong((prev) =>
           prev[songId]
             ? prev
             : { ...prev, [songId]: { title, texts: serverTexts } },
         );
+      },
+      open() {
+        setEditing(true);
+      },
+      close() {
+        setEditing(false);
       },
       setText(songId, at, text) {
         setBySong((prev) => {
@@ -104,57 +115,19 @@ export function PrototypeLab({ children }: { children: ReactNode }) {
           };
         });
       },
-      move(songId, at, delta) {
-        setBySong((prev) => {
-          const song = prev[songId];
-          if (!song) return prev;
-          const next = at + delta;
-          if (next < 0 || next >= song.texts.length) return prev;
-          const texts = [...song.texts];
-          const [item] = texts.splice(at, 1);
-          if (item === undefined) return prev;
-          texts.splice(next, 0, item);
-          return { ...prev, [songId]: { ...song, texts } };
-        });
-      },
-      setIndex,
     }),
-    [activeSongId, bySong, index],
+    [activeSongId, bySong, editing],
   );
 
   return <LabContext.Provider value={lab}>{children}</LabContext.Provider>;
 }
 
-function textsOf(
-  lab: Lab,
-  songId: string,
-  serverTexts: string[],
-) {
-  return lab.bySong[songId]?.texts ?? serverTexts;
-}
-
-export function PrototypeSectionEditor({
-  songId,
-  title,
-  serverTexts,
-}: {
-  songId: string;
-  title: string;
-  serverTexts: string[];
-}) {
+function PrototypeTrechosList({ songId }: { songId: string }) {
   const lab = usePrototypeLab();
-  const seed = serverTexts.join("\n");
-  useEffect(() => {
-    lab.ensure(songId, title, seed === "" ? [] : seed.split("\n"));
-    // lab.ensure identity changes when drafts change; re-seeding would reset the slide.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [songId, title, seed]);
-
-  const texts = textsOf(lab, songId, serverTexts);
+  const texts = lab.bySong[songId]?.texts ?? [];
 
   return (
-    <div className="flex flex-col gap-2 border-t border-line pt-3">
-      <p className="text-sm font-medium">Trechos</p>
+    <div className="flex flex-col gap-2">
       {texts.map((text, i) => (
         <textarea
           key={i}
@@ -186,121 +159,7 @@ export function PrototypeSectionEditor({
   );
 }
 
-export function PrototypePaneEditor() {
-  const lab = usePrototypeLab();
-  const song = lab.activeSongId ? lab.bySong[lab.activeSongId] : null;
-
-  if (!song || !lab.activeSongId) {
-    return (
-      <p className="text-muted-foreground">
-        Escolha uma música. Os trechos abrem aqui, no lugar da prévia.
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">{song.title}</h2>
-      {song.texts.map((text, i) => (
-        <label key={i} className="flex flex-col gap-1 text-sm font-medium">
-          Trecho {i + 1}
-          <textarea
-            value={text}
-            rows={4}
-            onChange={(event) =>
-              lab.setText(lab.activeSongId!, i, event.target.value)
-            }
-            className="rounded-lg border border-line bg-paper px-3 py-2 font-normal"
-          />
-          <span className="flex gap-2 font-normal">
-            <button type="button" onClick={() => lab.move(lab.activeSongId!, i, -1)}>
-              Subir
-            </button>
-            <button type="button" onClick={() => lab.move(lab.activeSongId!, i, 1)}>
-              Descer
-            </button>
-            <button type="button" onClick={() => lab.remove(lab.activeSongId!, i)}>
-              Remover
-            </button>
-          </span>
-        </label>
-      ))}
-      <button
-        type="button"
-        className="self-start rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white"
-        onClick={() => lab.add(lab.activeSongId!)}
-      >
-        Adicionar trecho
-      </button>
-    </div>
-  );
-}
-
-export function PrototypeSlideEditor() {
-  const lab = usePrototypeLab();
-  const song = lab.activeSongId ? lab.bySong[lab.activeSongId] : null;
-
-  if (!song || !lab.activeSongId) {
-    return (
-      <p className="text-muted-foreground">
-        Escolha uma música para editar um slide de cada vez.
-      </p>
-    );
-  }
-
-  const at = Math.min(lab.index, Math.max(song.texts.length - 1, 0));
-  const text = song.texts[at] ?? "";
-
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
-        {song.title} · slide {song.texts.length === 0 ? 0 : at + 1} de{" "}
-        {song.texts.length}
-      </p>
-      <div
-        className="flex aspect-video flex-col items-center justify-center rounded-[10px] border border-line p-8"
-        style={{ background: "#F1F0F0", color: "#343434" }}
-      >
-        <textarea
-          aria-label="Texto do slide"
-          value={text}
-          onChange={(event) => lab.setText(lab.activeSongId!, at, event.target.value)}
-          className="w-full resize-none bg-transparent text-center text-2xl leading-snug outline-none"
-          style={{ fontFamily: "var(--font-slide-cardo), Cardo, serif" }}
-          rows={4}
-        />
-      </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          className="rounded-full border border-line px-3 py-1.5 text-sm font-semibold"
-          onClick={() => lab.setIndex(Math.max(0, at - 1))}
-        >
-          Anterior
-        </button>
-        <button
-          type="button"
-          className="rounded-full border border-line px-3 py-1.5 text-sm font-semibold"
-          onClick={() => lab.setIndex(Math.min(song.texts.length - 1, at + 1))}
-        >
-          Próximo
-        </button>
-        <button
-          type="button"
-          className="rounded-full border border-line px-3 py-1.5 text-sm font-semibold"
-          onClick={() => {
-            lab.add(lab.activeSongId!);
-            lab.setIndex(song.texts.length);
-          }}
-        >
-          Novo slide
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export function PrototypeSeed({
+export function PrototypeEditButton({
   songId,
   title,
   serverTexts,
@@ -310,13 +169,92 @@ export function PrototypeSeed({
   serverTexts: string[];
 }) {
   const lab = usePrototypeLab();
-  const seed = serverTexts.join("\n");
-  useEffect(() => {
-    lab.ensure(songId, title, seed === "" ? [] : seed.split("\n"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [songId, title, seed]);
-  return null;
+  const open = lab.editing && lab.activeSongId === songId;
+
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      className="self-start rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-[#fafafa]"
+      onClick={() => {
+        if (open) {
+          lab.close();
+          return;
+        }
+        lab.ensure(songId, title, serverTexts);
+        lab.open();
+      }}
+    >
+      {open ? "Fechar trechos" : "Editar trechos"}
+    </button>
+  );
 }
+
+export function PrototypeInlineEditor({ songId }: { songId: string }) {
+  const lab = usePrototypeLab();
+  if (!lab.editing || lab.activeSongId !== songId) return null;
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-line pt-3">
+      <p className="text-sm font-medium">Trechos</p>
+      <PrototypeTrechosList songId={songId} />
+    </div>
+  );
+}
+
+export function PrototypeReveal({
+  variant,
+}: {
+  variant: "sheet" | "dialog";
+}) {
+  const lab = usePrototypeLab();
+  const songId = lab.activeSongId;
+  const song = songId ? lab.bySong[songId] : null;
+  const show = lab.editing && Boolean(songId && song);
+
+  if (variant === "sheet") {
+    return (
+      <Sheet open={show} onOpenChange={(next) => { if (!next) lab.close(); }}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Trechos</SheetTitle>
+            <SheetDescription>{song?.title}</SheetDescription>
+          </SheetHeader>
+          <div className="px-4 pb-4">
+            {songId ? <PrototypeTrechosList songId={songId} /> : null}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  if (!show || !songId || !song) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={() => lab.close()}
+    >
+      <div
+        className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-[10px] border border-line bg-paper p-4 shadow-lg"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <h2 className="text-lg font-semibold">Trechos · {song.title}</h2>
+          <button
+            type="button"
+            className="text-sm font-semibold"
+            onClick={() => lab.close()}
+          >
+            Fechar
+          </button>
+        </div>
+        <PrototypeTrechosList songId={songId} />
+      </div>
+    </div>
+  );
+}
+
 
 export function PrototypeSwitcher({
   programId,
@@ -357,7 +295,7 @@ export function PrototypeSwitcher({
   const active = lab.activeSongId ? lab.bySong[lab.activeSongId] : null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 flex w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 flex-col gap-2">
+    <div className="fixed bottom-4 left-1/2 z-[70] flex w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 flex-col gap-2">
       <pre className="max-h-40 overflow-auto rounded-xl bg-black/90 px-3 py-2 text-xs text-white">
         {JSON.stringify(
           {
@@ -365,7 +303,7 @@ export function PrototypeSwitcher({
             songId: lab.activeSongId,
             title: active?.title ?? null,
             texts: active?.texts ?? [],
-            slideIndex: lab.index,
+            editing: lab.editing,
           },
           null,
           2,

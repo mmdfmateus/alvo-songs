@@ -11,10 +11,9 @@ import {
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
 import { SongTrechosField } from "~/app/(slides)/slides/_components/song-trechos-field";
 import {
-  PrototypePaneEditor,
-  PrototypeSectionEditor,
-  PrototypeSeed,
-  PrototypeSlideEditor,
+  PrototypeEditButton,
+  PrototypeInlineEditor,
+  PrototypeReveal,
   usePrototypeLabOptional,
 } from "~/app/(slides)/slides/_components/prototype-trechos-layout";
 import type { PrototypeVariant } from "~/app/(slides)/slides/_components/prototype-trechos-variant";
@@ -279,19 +278,17 @@ function SongPicker({
       {!songId ? (
         <p className="text-sm text-muted-foreground">Escolha uma música da Biblioteca.</p>
       ) : null}
-      {prototypeVariant === "section" && songId && detail.data ? (
-        <PrototypeSectionEditor
-          songId={songId}
-          title={detail.data.title}
-          serverTexts={detail.data.chunks.map((chunk) => chunk.text)}
-        />
-      ) : null}
-      {prototypeVariant && prototypeVariant !== "section" && songId && detail.data ? (
-        <PrototypeSeed
-          songId={songId}
-          title={detail.data.title}
-          serverTexts={detail.data.chunks.map((chunk) => chunk.text)}
-        />
+      {prototypeVariant && songId && detail.data ? (
+        <>
+          <PrototypeEditButton
+            songId={songId}
+            title={detail.data.title}
+            serverTexts={detail.data.chunks.map((chunk) => chunk.text)}
+          />
+          {prototypeVariant === "inline" ? (
+            <PrototypeInlineEditor songId={songId} />
+          ) : null}
+        </>
       ) : null}
       {!prototypeVariant && canEditTrechos && songId && detail.data ? (
         <SongTrechosField
@@ -400,7 +397,7 @@ export function ProgramBuilder({
   const prototypeLab = usePrototypeLabOptional();
   const { themeId, chooseTheme } = useSlideTheme(program.id);
   const trechosOverride =
-    prototypeVariant === "section" && prototypeLab
+    prototypeVariant && prototypeLab
       ? Object.fromEntries(
           Object.entries(prototypeLab.bySong).map(([id, song]) => [
             id,
@@ -776,25 +773,18 @@ export function ProgramBuilder({
       </form>
 
       <section>
-        {prototypeVariant === "pane" || prototypeVariant === "slide" ? (
-          prototypeVariant === "pane" ? (
-            <PrototypePaneEditor />
-          ) : (
-            <PrototypeSlideEditor />
-          )
-        ) : (
-          <>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold">Prévia</h2>
-              <SlideThemePicker value={themeId} onChange={chooseTheme} />
-            </div>
-            <div className="mb-6">
-              <ExportPdfHint />
-            </div>
-            <SlidePreview slides={slides} themeId={themeId} />
-          </>
-        )}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold">Prévia</h2>
+          <SlideThemePicker value={themeId} onChange={chooseTheme} />
+        </div>
+        <div className="mb-6">
+          <ExportPdfHint />
+        </div>
+        <SlidePreview slides={slides} themeId={themeId} />
       </section>
+      {prototypeVariant === "sheet" || prototypeVariant === "dialog" ? (
+        <PrototypeReveal variant={prototypeVariant} />
+      ) : null}
     </div>
   );
 }
