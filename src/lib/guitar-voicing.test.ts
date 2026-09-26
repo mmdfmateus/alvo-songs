@@ -26,9 +26,36 @@ test("slash bass maps to a standard inversion", () => {
   });
 });
 
+test("livrinho-style names map to known shapes", () => {
+  expect(lookupGuitarVoicing("Am")).toEqual({
+    ok: true,
+    label: "Am",
+    strings: [null, 0, 2, 2, 1, 0],
+  });
+  expect(lookupGuitarVoicing("C9")).toEqual({
+    ok: true,
+    label: "C9",
+    strings: [null, 3, 2, 3, 3, 0],
+  });
+  expect(lookupGuitarVoicing("G4")).toEqual({
+    ok: true,
+    label: "G4",
+    strings: [3, 3, 0, 0, 1, 3],
+  });
+  expect(lookupGuitarVoicing("A7M")).toEqual({
+    ok: true,
+    label: "A7M",
+    strings: [null, 0, 2, 1, 2, 0],
+  });
+});
+
 test("unknown names miss without invented frets", () => {
   expect(lookupGuitarVoicing("Nxyz")).toEqual({ ok: false, label: "Nxyz" });
   expect(lookupGuitarVoicing("Nxyz")).not.toHaveProperty("strings");
+  expect(lookupGuitarVoicing("Convite")).toEqual({
+    ok: false,
+    label: "Convite",
+  });
 });
 
 test("lookup uses the displayed name after session Tom", () => {
@@ -46,4 +73,12 @@ test("lookup uses the displayed name after session Tom", () => {
     strings: [3, 2, 0, 0, 0, 3],
   });
   expect(onScreen).not.toEqual(stored);
+});
+
+test("whitespace around a displayed name is ignored", () => {
+  expect(lookupGuitarVoicing("  Am  ")).toEqual({
+    ok: true,
+    label: "Am",
+    strings: [null, 0, 2, 2, 1, 0],
+  });
 });

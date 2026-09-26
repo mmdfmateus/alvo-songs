@@ -1,24 +1,31 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { CifraTabTools } from "~/app/(biblioteca)/musicas/_components/cifra-tab-tools";
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
 import { UniqueChordStrip } from "~/app/(biblioteca)/musicas/_components/unique-chord-strip";
-import { uniqueDisplayedChords, type CifraViewLine } from "~/lib/cifra";
+import { cifraViewLines, uniqueDisplayedChords } from "~/lib/cifra";
+import { transposeCifra } from "~/lib/cifra-parse";
 
 type ReadTab = "cifra" | "letra" | "listen";
 
 export function SongReadTabs({
-  cifraLines,
+  cifra,
   letra,
   videoId,
 }: {
-  cifraLines: CifraViewLine[];
+  cifra: unknown;
   letra: string;
   videoId?: string | null;
 }) {
   const [tab, setTab] = useState<ReadTab>("cifra");
+  const [semitones, setSemitones] = useState(0);
+
+  const cifraLines = useMemo(
+    () => cifraViewLines(transposeCifra(cifra, semitones)),
+    [cifra, semitones],
+  );
   const uniqueNames = uniqueDisplayedChords(cifraLines);
 
   const tablist = (
@@ -70,12 +77,18 @@ export function SongReadTabs({
     body = (
       <CifraTabTools
         tablist={tablist}
+        tom={{
+          semitones,
+          onLower: () => setSemitones((value) => value - 1),
+          onRaise: () => setSemitones((value) => value + 1),
+          onReset: () => setSemitones(0),
+        }}
         acordes={
           uniqueNames.length > 0 ? (
             <UniqueChordStrip names={uniqueNames} />
           ) : undefined
         }
-        sheet={<CifraView lines={cifraLines} />}
+        sheet={<CifraView lines={cifraLines} interactiveChords />}
       />
     );
   } else {
