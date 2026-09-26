@@ -9,6 +9,7 @@ import {
   ExportPdfHint,
 } from "~/app/(slides)/slides/_components/export-pdf-button";
 import { SlidePreview } from "~/app/(slides)/slides/_components/slide-preview";
+import { SongTrechosField } from "~/app/(slides)/slides/_components/song-trechos-field";
 import {
   SlideThemePicker,
   useSlideTheme,
@@ -227,10 +228,12 @@ function toInput(sections: DraftSection[]): ProgramAutosaveDraft["sections"] {
 function SongPicker({
   songId,
   songs,
+  canEditTrechos,
   onChange,
 }: {
   songId: string | null;
   songs: { id: string; title: string }[];
+  canEditTrechos: boolean;
   onChange: (songId: string | null) => void;
 }) {
   const detail = api.song.byId.useQuery(
@@ -265,6 +268,13 @@ function SongPicker({
       ) : null}
       {!songId ? (
         <p className="text-sm text-muted-foreground">Escolha uma música da Biblioteca.</p>
+      ) : null}
+      {canEditTrechos && songId && detail.data ? (
+        <SongTrechosField
+          key={songId}
+          songId={songId}
+          chunks={detail.data.chunks}
+        />
       ) : null}
     </div>
   );
@@ -346,6 +356,7 @@ export function ProgramBuilder({
     null,
   );
   const library = api.song.list.useQuery();
+  const viewer = api.auth.viewer.useQuery();
   const { themeId, chooseTheme } = useSlideTheme(program.id);
   const { slides, songsFetched } = useLivePreviewSlides(
     sections,
@@ -629,6 +640,7 @@ export function ProgramBuilder({
                 <SongPicker
                   songId={section.songId}
                   songs={library.data ?? []}
+                  canEditTrechos={viewer.data?.isEditor === true}
                   onChange={(songId) => {
                     markDirty();
                     const copy = [...sections];
