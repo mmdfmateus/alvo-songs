@@ -8,7 +8,6 @@ const tomSummaryClassName =
 
 export type CifraTomControls = {
   semitones: number;
-  originalHint: string | null;
   onLower: () => void;
   onRaise: () => void;
   onReset: () => void;
@@ -33,11 +32,6 @@ export function CifraView({
         <details className="mb-3" aria-label="Tom">
           <summary className={tomSummaryClassName}>
             Tom
-            {tom.originalHint ? (
-              <span className="font-medium text-muted-foreground">
-                {tom.originalHint}
-              </span>
-            ) : null}
             {tomOffsetLabel(tom.semitones) ? (
               <span role="status" className="font-medium text-accent">
                 {tomOffsetLabel(tom.semitones)}

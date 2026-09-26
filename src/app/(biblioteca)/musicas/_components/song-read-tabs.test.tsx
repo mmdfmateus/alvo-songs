@@ -10,7 +10,7 @@ Let it be, let it be, let it be, let it be`;
 
 const storedLetra = "Let it be, let it be, let it be, let it be";
 
-test("Cifra tab hides Tom controls behind a disclosure and shows a stored-chord hint", () => {
+test("Cifra tab hides Tom controls behind a disclosure", () => {
   const html = renderToStaticMarkup(
     createElement(SongReadTabs, {
       cifra: parseCifra(LET_IT_BE),

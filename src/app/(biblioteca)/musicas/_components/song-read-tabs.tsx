@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { CifraView } from "~/app/(biblioteca)/musicas/_components/cifra-view";
-import { cifraViewLines, storedTomHint } from "~/lib/cifra";
+import { cifraViewLines } from "~/lib/cifra";
 import { transposeCifra } from "~/lib/cifra-parse";
 
 type ReadTab = "cifra" | "letra" | "listen";
@@ -73,7 +73,6 @@ export function SongReadTabs({
           lines={cifraLines}
           tom={{
             semitones,
-            originalHint: storedTomHint(cifra),
             onLower: () => setSemitones((value) => value - 1),
             onRaise: () => setSemitones((value) => value + 1),
             onReset: () => setSemitones(0),
