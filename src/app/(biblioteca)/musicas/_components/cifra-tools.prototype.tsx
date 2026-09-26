@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { CifraTomControls } from "~/app/(biblioteca)/musicas/_components/cifra-view";
 import type { CifraViewLine } from "~/lib/cifra";
+import { cn } from "~/lib/utils";
 
 /**
  * PROTOTYPE — throwaway.
@@ -21,9 +22,10 @@ export const CIFRA_TOOL_VARIANT_NAMES = {
 export type CifraToolVariant = keyof typeof CIFRA_TOOL_VARIANT_NAMES;
 
 const toolBtn =
-  "inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-sm font-semibold text-ink hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink";
+  "inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-sm font-semibold text-ink hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink";
 
-const toolBtnOn = "bg-ink text-white hover:bg-ink hover:text-white";
+const toolBtnOn =
+  "bg-ink text-white hover:bg-ink hover:text-white";
 
 function TomMark() {
   return (
@@ -166,7 +168,7 @@ function ToolIcons({
         type="button"
         aria-label="Tom"
         aria-pressed={open === "tom"}
-        className={`${toolBtn} ${open === "tom" ? toolBtnOn : ""}`}
+        className={cn(toolBtn, open === "tom" && toolBtnOn)}
         onClick={() => onOpen(open === "tom" ? null : "tom")}
       >
         <TomMark />
@@ -175,7 +177,7 @@ function ToolIcons({
         type="button"
         aria-label="Acordes"
         aria-pressed={open === "acordes"}
-        className={`${toolBtn} ${open === "acordes" ? toolBtnOn : ""}`}
+        className={cn(toolBtn, open === "acordes" && toolBtnOn)}
         onClick={() => onOpen(open === "acordes" ? null : "acordes")}
       >
         <AcordesMark />
